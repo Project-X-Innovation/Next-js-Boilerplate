@@ -1,0 +1,64 @@
+{
+  "problem": "The ticket requests adding a 'PX Logo' to the login page. Currently the sign-in page renders the Clerk <SignIn> component with no custom logo or branding. No PX logo asset exists in the repository. The GitHub organization is 'Project-X-Innovation', suggesting 'PX' refers to 'Project X'.",
+  "files": [
+    {
+      "path": "src/app/[locale]/(auth)/(center)/sign-in/[[...sign-in]]/page.tsx",
+      "why": "The sign-in page component. Renders Clerk <SignIn> with no custom surrounding content. Primary modification target for adding a logo above/near the sign-in form."
+    },
+    {
+      "path": "src/app/[locale]/(auth)/(center)/layout.tsx",
+      "why": "Center layout wrapping sign-in and sign-up pages. A minimal flex container (min-h-screen, items-center, justify-center). Could be modified to include a shared logo above the auth form."
+    },
+    {
+      "path": "src/app/[locale]/(auth)/layout.tsx",
+      "why": "Auth layout providing ClerkProvider with appearance config. The appearance prop currently only sets cssLayerName. Could be extended to customize Clerk branding/logo."
+    },
+    {
+      "path": "src/app/[locale]/(auth)/(center)/sign-up/[[...sign-up]]/page.tsx",
+      "why": "The sign-up page. Structurally identical to sign-in. If the logo is added via the shared (center) layout, it will also appear here."
+    },
+    {
+      "path": "src/app/[locale]/layout.tsx",
+      "why": "Root layout. Sets favicon metadata and imports global CSS. Provides overall HTML structure."
+    },
+    {
+      "path": "src/styles/global.css",
+      "why": "Global CSS with Tailwind v4 and Clerk CSS layer ordering. Any logo styling would need to be compatible with this layer setup."
+    },
+    {
+      "path": "public/assets/images/",
+      "why": "Directory holding all image assets (sponsor logos, boilerplate screenshots). No PX logo currently exists here. A new PX logo asset would need to be added."
+    },
+    {
+      "path": "src/components/Sponsors.tsx",
+      "why": "Reference for how existing logos are rendered (uses next/image with static imports from @/public/assets/images/). Establishes the pattern for logo usage in this codebase."
+    },
+    {
+      "path": "src/utils/AppConfig.ts",
+      "why": "App configuration including the app name ('Nextjs Starter'). No PX branding currently present."
+    },
+    {
+      "path": "tests/e2e/I18n.e2e.ts",
+      "why": "E2E test that navigates to /sign-in and /fr/sign-in. Checks for 'Email address' text from Clerk. Adding a logo should not break this test but may need consideration."
+    }
+  ],
+  "facts": [
+    "The sign-in page is at src/app/[locale]/(auth)/(center)/sign-in/[[...sign-in]]/page.tsx and renders only Clerk's <SignIn> component with no surrounding custom content.",
+    "The center layout at src/app/[locale]/(auth)/(center)/layout.tsx is a minimal flex container: <div className='flex min-h-screen items-center justify-center'>{children}</div>.",
+    "The auth layout at src/app/[locale]/(auth)/layout.tsx wraps children in ClerkProvider with appearance={{ cssLayerName: 'clerk' }} - no logo customization.",
+    "No PX logo asset (svg, png, or otherwise) exists anywhere in the repository. Grep for 'px-logo', 'px.logo', 'pxlogo', 'PX' returned no logo-related results.",
+    "Existing image assets live in public/assets/images/ and are imported as static next/image sources (e.g., import logo from '@/public/assets/images/...').",
+    "The project uses Tailwind CSS v4 with global CSS layer ordering: @layer theme, base, clerk, components, utilities.",
+    "The GitHub organization is 'Project-X-Innovation' (from ticket.md repo_url), suggesting 'PX' = 'Project X'.",
+    "The sign-up page has an identical structure and shares the same (center) layout as sign-in.",
+    "Quality gates: lint (ultracite with type-aware checks), check:types (tsc --noEmit), test (vitest), test:e2e (playwright), check:deps (knip), check:i18n (i18n-check).",
+    "AGENTS.md specifies: named exports only (except Next.js pages), absolute imports via @/, Tailwind v4 utility classes, no default exports except pages."
+  ],
+  "unknowns": [
+    "No PX logo asset exists in the repository - it is unknown where the logo file will come from or what format/dimensions it should be.",
+    "It is unclear whether the logo should be placed above the Clerk sign-in form in the page component, in the shared center layout (affecting both sign-in and sign-up), or injected via Clerk's appearance API.",
+    "The ticket does not specify whether the logo should also appear on the sign-up page.",
+    "The ticket provides no design specification for logo dimensions, placement, spacing, or responsive behavior.",
+    "It is unknown whether 'PX Logo' refers to a specific brand asset that should be sourced externally or created as a text/SVG placeholder."
+  ]
+}
