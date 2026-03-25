@@ -1,0 +1,77 @@
+{
+  "problem": "Add a Finesse logo to the logon (sign-in) page. Currently, no Finesse branding assets exist anywhere in the repository, and the sign-in page renders only the Clerk <SignIn /> component inside a centered flex container with no custom branding.",
+  "files": [
+    {
+      "path": "src/app/[locale]/(auth)/(center)/sign-in/[[...sign-in]]/page.tsx",
+      "why": "The sign-in page component. Currently renders only Clerk's <SignIn /> with locale-aware path. This is the primary target for adding the Finesse logo."
+    },
+    {
+      "path": "src/app/[locale]/(auth)/(center)/layout.tsx",
+      "why": "The centered layout wrapping sign-in and sign-up pages. Uses 'flex min-h-screen items-center justify-center'. Logo could be added here to appear on both sign-in and sign-up, or only in the sign-in page."
+    },
+    {
+      "path": "src/app/[locale]/(auth)/layout.tsx",
+      "why": "Auth layout wrapping ClerkProvider with appearance/localization config. Boundary for auth-related styling."
+    },
+    {
+      "path": "src/app/[locale]/(auth)/(center)/sign-up/[[...sign-up]]/page.tsx",
+      "why": "The sign-up page component. Sibling to sign-in under the same centered layout. Relevant if the logo should appear on sign-up too."
+    },
+    {
+      "path": "src/app/[locale]/layout.tsx",
+      "why": "Root locale layout. Defines favicon metadata and global CSS import. Boundary for app-wide branding."
+    },
+    {
+      "path": "src/styles/global.css",
+      "why": "Global CSS with Tailwind v4 layer ordering including 'clerk' layer. Relevant for any custom styling of the logo."
+    },
+    {
+      "path": "src/components/Sponsors.tsx",
+      "why": "Demonstrates the established pattern for displaying logo images: next/image with static imports from @/public/assets/images/."
+    },
+    {
+      "path": "public/assets/images/",
+      "why": "Directory where all image/logo assets are stored. A Finesse logo asset would need to be placed here."
+    },
+    {
+      "path": "src/locales/en.json",
+      "why": "English translations. Contains 'SignIn' namespace. Alt text or any user-visible strings for the logo should be added here."
+    },
+    {
+      "path": "src/locales/fr.json",
+      "why": "French translations. Contains 'SignIn' namespace. Must be updated alongside en.json for i18n compliance."
+    },
+    {
+      "path": "src/utils/AppConfig.ts",
+      "why": "App configuration including name ('Nextjs Starter'), locale settings, and Clerk localizations. Possible location for Finesse branding metadata."
+    },
+    {
+      "path": "package.json",
+      "why": "Quality gate scripts: lint (ultracite), check:types (tsc), check:deps (knip), check:i18n (i18n-check), test (vitest), build."
+    },
+    {
+      "path": "AGENTS.md",
+      "why": "Coding conventions: named exports only (except Next.js pages), Tailwind v4 utility classes, i18n rules (never hard-code user-visible strings), React conventions (no destructuring props)."
+    }
+  ],
+  "facts": [
+    "The sign-in page is at src/app/[locale]/(auth)/(center)/sign-in/[[...sign-in]]/page.tsx and renders only Clerk's <SignIn /> component with no custom branding (line 29).",
+    "The centered layout at src/app/[locale]/(auth)/(center)/layout.tsx wraps both sign-in and sign-up pages with a 'flex min-h-screen items-center justify-center' container and contains no logo or branding.",
+    "No file or string matching 'finesse' (case-insensitive) exists in the repository source code; only the ticket references it.",
+    "No Finesse logo asset (SVG, PNG, or any format) exists in public/assets/images/ or anywhere else in the repo.",
+    "Existing logo images are stored as static files in public/assets/images/ and imported using @/public/assets/images/ path aliases with next/image <Image> component (see Sponsors.tsx).",
+    "The project uses next-intl for i18n with 'en' and 'fr' locales; all user-visible strings must be in locale JSON files under the appropriate namespace (AGENTS.md convention).",
+    "Quality gates: lint via 'ultracite check --type-aware --type-check', typecheck via 'tsc --noEmit', dep check via 'knip', i18n check via 'i18n-check', unit tests via 'vitest run'.",
+    "Tailwind CSS v4 is used with CSS-first configuration (no tailwind.config.js); Clerk styles use a dedicated 'clerk' CSS layer.",
+    "The auth layout passes cssLayerName: 'clerk' to ClerkProvider appearance config for Tailwind v4 compatibility.",
+    "No existing tests cover the sign-in or sign-up pages in the tests/ directory."
+  ],
+  "unknowns": [
+    "No Finesse logo asset is provided or attached to the ticket; it is unknown what format (SVG, PNG), dimensions, or design the logo should have.",
+    "It is unclear whether 'Finesse' refers to a product name, company name, or app rebrand; no context is given beyond the ticket title.",
+    "It is unknown whether the logo should appear only on the sign-in page or also on the sign-up page (both share the same centered layout).",
+    "The exact visual placement of the logo relative to the Clerk sign-in form is unspecified (above, below, beside, or overlaid).",
+    "It is unknown whether the existing app name 'Nextjs Starter' in AppConfig should be changed to 'Finesse'.",
+    "It is unclear whether the Finesse logo should replace the Clerk default branding within the <SignIn /> component (via Clerk appearance customization) or be added as a separate element outside the Clerk form."
+  ]
+}
