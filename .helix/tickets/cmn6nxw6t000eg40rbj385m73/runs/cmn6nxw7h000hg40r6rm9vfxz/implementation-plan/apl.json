@@ -1,0 +1,43 @@
+{
+  "questions": [
+    "What is the correct sequence of implementation steps to add a PX logo to the sign-in page?",
+    "Which files need to be created and modified?",
+    "What verification commands should be used to confirm correctness?",
+    "Are there any cross-file dependencies or ordering constraints?"
+  ],
+  "answers": [
+    {
+      "answer": "The implementation has three sequential steps: (1) Create the PX logo SVG asset at public/assets/images/px-logo.svg, (2) Modify the sign-in page to import and render the logo above the Clerk <SignIn> component, (3) Run all quality gates to confirm no regressions.",
+      "evidence": [
+        "tech-research/tech-research.md: Option A chosen — page-level logo with next/image, SVG file + page modification",
+        "diagnosis/diagnosis-statement.md: Two deliverables — logo asset and page rendering",
+        "product/product.md: Scoped to login page only"
+      ]
+    },
+    {
+      "answer": "One new file: public/assets/images/px-logo.svg (SVG logo asset). One modified file: src/app/[locale]/(auth)/(center)/sign-in/[[...sign-in]]/page.tsx (add Image import, static SVG import, flex-col wrapper with logo above SignIn). No other files should be changed.",
+      "evidence": [
+        "tech-research/tech-research.md Summary Table: 'Files changed: 1 new file (SVG), 1 modified file (sign-in page)'",
+        "product/product.md: 'Shared layout caution: changes should be made at the page level, not the layout level'",
+        "Direct inspection of sign-in page: currently returns only <SignIn> with no wrapper"
+      ]
+    },
+    {
+      "answer": "Quality gate commands: bun run check:types, bun run lint, bun run check:deps, bun run check:i18n, bun run test. Browser verification: start dev server and navigate to /sign-in to confirm logo renders above the Clerk form.",
+      "evidence": [
+        "package.json scripts: check:types, lint, check:deps, check:i18n, test",
+        "AGENTS.md: 'Only these bun run scripts: build-local, lint, check:types, check:deps, check:i18n, test, test:e2e'",
+        "tests/e2e/I18n.e2e.ts: existing e2e test checks for 'Email address' text on /sign-in"
+      ]
+    },
+    {
+      "answer": "Step 2 depends on Step 1 (the SVG file must exist before the page can import it). Step 3 depends on both Step 1 and Step 2 being complete. There are no cross-repo dependencies — all changes are within next-js-boilerplate.",
+      "evidence": [
+        "repo-guidance.json: single target repo next-js-boilerplate",
+        "The static import in page.tsx references @/public/assets/images/px-logo.svg which must exist first"
+      ]
+    }
+  ],
+  "statement": "The implementation plan defines three atomic, sequential steps: (1) Create a PX logo SVG at public/assets/images/px-logo.svg, (2) Modify the sign-in page to render the logo above the Clerk SignIn component using next/image with a static import and a flex-col wrapper, (3) Run all quality gates. Total scope: 1 new file, 1 modified file, no new dependencies, no shared layout changes.",
+  "followups": []
+}
