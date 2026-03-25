@@ -1,0 +1,51 @@
+{
+  "questions": [
+    "What is the best format for the Finesse logo placeholder asset?",
+    "Should the logo be placed in the sign-in page component or the shared centered layout?",
+    "How should the logo be rendered — via next/image with static import, inline SVG, or Clerk appearance API?",
+    "What layout structure should wrap the logo and sign-in form?",
+    "Are there any Tailwind v4 or Next.js 16 considerations for the image rendering approach?"
+  ],
+  "answers": [
+    {
+      "answer": "SVG is the best format. The codebase already uses both SVG and PNG for logos (e.g., arcjet-light.svg, posthog-logo.svg). SVG is scalable, lightweight, and ideal for a text-based placeholder logo. It can be replaced with any format later without code changes since next/image handles both.",
+      "evidence": [
+        "public/assets/images/ contains SVGs (arcjet-light.svg, arcjet-dark.svg, coderabbit-logo-light.svg, coderabbit-logo-dark.svg, posthog-logo.svg) alongside PNGs",
+        "Sponsors.tsx imports both SVG and PNG files identically via next/image"
+      ]
+    },
+    {
+      "answer": "The logo should be placed in the sign-in page component (page.tsx), not the shared centered layout. The ticket says 'logon page' (singular), referring only to sign-in. The centered layout at (center)/layout.tsx wraps both sign-in and sign-up pages. Adding the logo to the page component keeps the change minimal and avoids unintended sign-up page modifications.",
+      "evidence": [
+        "Ticket title: 'Finesse logo on logon page' — singular 'logon page'",
+        "src/app/[locale]/(auth)/(center)/layout.tsx wraps both sign-in and sign-up",
+        "Product product.md: 'Adding the Finesse logo to the sign-up page' is explicitly out of scope"
+      ]
+    },
+    {
+      "answer": "Use next/image with a static import from @/public/assets/images/, matching the established pattern in Sponsors.tsx. This approach provides automatic optimization, proper sizing, and consistent behavior with the rest of the codebase. The Clerk appearance API approach was rejected because it couples branding to Clerk's internal DOM, is harder to maintain, and is explicitly out of scope per product.md.",
+      "evidence": [
+        "Sponsors.tsx lines 1-10: static imports from @/public/assets/images/ with next/image <Image>",
+        "Diagnosis statement: 'The simpler approach — rendering the logo above the <SignIn /> component — is preferred per the minimal-change principle'",
+        "Product.md explicitly excludes: 'Customizing the Clerk sign-in form internal branding via the Clerk appearance API'"
+      ]
+    },
+    {
+      "answer": "Wrap the logo and <SignIn /> component in a flex column container with vertical centering and a gap. The parent (center)/layout.tsx already provides 'flex min-h-screen items-center justify-center', so the page just needs a vertical flex wrapper (flex-col items-center gap) to stack logo above form.",
+      "evidence": [
+        "src/app/[locale]/(auth)/(center)/layout.tsx line 11: <div className=\"flex min-h-screen items-center justify-center\">",
+        "Current sign-in page returns only <SignIn /> — wrapping in a div with flex-col is the minimal structural change"
+      ]
+    },
+    {
+      "answer": "No special considerations. Tailwind v4 with CSS-first configuration works with standard utility classes. Next.js 16 with next/image handles static SVG imports natively. The Clerk CSS layer is already configured (cssLayerName: 'clerk') and won't conflict with Tailwind utilities applied to the logo wrapper.",
+      "evidence": [
+        "global.css: '@layer theme, base, clerk, components, utilities;' — layer ordering already established",
+        "auth/layout.tsx: ClerkProvider appearance.cssLayerName = 'clerk'",
+        "next.config.ts: standard Next.js config with no image-related restrictions"
+      ]
+    }
+  ],
+  "statement": "Create a placeholder SVG logo for Finesse, place it in public/assets/images/, and render it above the Clerk <SignIn /> component using next/image with a static import. The sign-in page wraps logo + form in a flex-col container. i18n alt-text keys are added to en.json and fr.json under the SignIn namespace. The change is scoped to the sign-in page only. No new dependencies are needed.",
+  "followups": []
+}
