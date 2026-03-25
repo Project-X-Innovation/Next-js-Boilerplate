@@ -1,0 +1,10 @@
+{
+  "repos": [
+    {
+      "repoKey": "next-js-boilerplate",
+      "intent": "target",
+      "rationale": "The sign-in page, image assets directory, locale files, and all relevant code live in this single repository. The Finesse logo must be added here."
+    }
+  ],
+  "updatedBy": "diagnosis"
+}
