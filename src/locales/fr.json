@@ -54,7 +54,8 @@
   },
   "SignIn": {
     "meta_title": "Se connecter",
-    "meta_description": "Connectez-vous à votre compte avec facilité."
+    "meta_description": "Connectez-vous à votre compte avec facilité.",
+    "logo_alt": "Logo Finesse"
   },
   "SignUp": {
     "meta_title": "S'inscrire",
