@@ -1,0 +1,133 @@
+{
+  "problem": "The application needs a changeable list of favorite restaurants. Currently, no restaurant or favorites concept exists in the codebase. A new data model, API routes, UI components, and i18n strings are required. The existing counter feature provides a complete reference pattern (schema, API route, validation, form component, server component, i18n, tests).",
+  "files": [
+    {
+      "path": "src/models/Schema.ts",
+      "why": "Drizzle ORM schema file where a new favorite-restaurants table must be defined. Currently contains only counterSchema (lines 16-24). Referenced by drizzle.config.ts as the single schema source."
+    },
+    {
+      "path": "drizzle.config.ts",
+      "why": "Drizzle Kit config pointing to src/models/Schema.ts for migrations. After schema change, `npm run db:generate` produces a new migration."
+    },
+    {
+      "path": "migrations/",
+      "why": "Migration output directory. Currently has one migration (0000_init-db.sql for counter table). A new migration file will be generated here."
+    },
+    {
+      "path": "migrations/meta/_journal.json",
+      "why": "Drizzle migration journal tracking applied migrations. New migration entry will be appended."
+    },
+    {
+      "path": "src/utils/DBConnection.ts",
+      "why": "Creates Drizzle DB connection with `import * as schema from '@/models/Schema'`. New schema exports are automatically available via the wildcard import."
+    },
+    {
+      "path": "src/libs/DB.ts",
+      "why": "Singleton DB instance used by API routes and server components. No changes needed but is the import point for data access."
+    },
+    {
+      "path": "src/app/[locale]/api/counter/route.ts",
+      "why": "Reference pattern for API route: Zod validation, Drizzle insert/upsert, NextResponse JSON. New API routes for favorite restaurants should follow this pattern."
+    },
+    {
+      "path": "src/validations/CounterValidation.ts",
+      "why": "Reference pattern for Zod validation schema. A new validation file for restaurant data will follow this structure."
+    },
+    {
+      "path": "src/components/CounterForm.tsx",
+      "why": "Reference pattern for client-side form: 'use client', react-hook-form with zodResolver, fetch to API, router.refresh(). New restaurant list UI should follow this pattern."
+    },
+    {
+      "path": "src/components/CurrentCount.tsx",
+      "why": "Reference pattern for server component with DB read: uses db.query, getTranslations, headers. New restaurant list display should follow this pattern."
+    },
+    {
+      "path": "src/app/[locale]/(auth)/dashboard/page.tsx",
+      "why": "Dashboard page behind auth. A favorites feature is user-specific, so it likely belongs in the dashboard (auth) route group."
+    },
+    {
+      "path": "src/app/[locale]/(auth)/dashboard/layout.tsx",
+      "why": "Dashboard layout with navigation links. A new favorites page would need a nav entry added here."
+    },
+    {
+      "path": "src/app/[locale]/(auth)/layout.tsx",
+      "why": "Auth layout wrapping ClerkProvider. All pages in this route group are behind Clerk auth, providing user identity."
+    },
+    {
+      "path": "src/locales/en.json",
+      "why": "English i18n strings. New namespace and keys needed for favorite restaurants feature."
+    },
+    {
+      "path": "src/locales/fr.json",
+      "why": "French i18n strings. Must stay in sync with en.json for new feature keys."
+    },
+    {
+      "path": "src/libs/Env.ts",
+      "why": "Environment variable validation with @t3-oss/env-nextjs. DATABASE_URL (line 8) and CLERK_SECRET_KEY (line 7) are already validated. No new env vars expected."
+    },
+    {
+      "path": "src/utils/AppConfig.ts",
+      "why": "App configuration including locale list and prefix strategy. No changes expected but governs i18n behavior."
+    },
+    {
+      "path": "src/libs/I18nNavigation.ts",
+      "why": "Exports Link, usePathname, useRouter from next-intl navigation. Used by client components for locale-aware navigation."
+    },
+    {
+      "path": "src/templates/BaseTemplate.tsx",
+      "why": "Shared layout template with leftNav/rightNav slots. Dashboard layout uses this for navigation rendering."
+    },
+    {
+      "path": "package.json",
+      "why": "Scripts and dependencies. Key commands: build-local, lint, check:types, check:deps, check:i18n, test, test:e2e, db:generate, db:migrate."
+    },
+    {
+      "path": "lefthook.yml",
+      "why": "Pre-commit hooks: ultracite lint/fix and knip dependency check. Commits must pass these gates."
+    },
+    {
+      "path": "tests/integration/Counter.spec.ts",
+      "why": "Reference pattern for integration tests using Playwright: PUT requests, status assertions, JSON response validation."
+    },
+    {
+      "path": "AGENTS.md",
+      "why": "Coding standards: named exports only, Zod type-only imports, no useMemo/useCallback, Tailwind v4 utility classes, conventional commits, test naming conventions."
+    },
+    {
+      "path": "src/components/Hello.tsx",
+      "why": "Server component using currentUser() from @clerk/nextjs/server to access authenticated user. Shows how to get user identity for user-scoped data."
+    }
+  ],
+  "facts": [
+    "No restaurant, favorite, or list concept exists anywhere in the codebase.",
+    "The only existing DB table is 'counter' with columns: id (serial PK), count (integer), updated_at, created_at.",
+    "Drizzle ORM (v0.45.1) with PostgreSQL dialect is the database layer; schema defined in src/models/Schema.ts.",
+    "Database migrations are generated via `npm run db:generate` (drizzle-kit generate) and applied via `npm run db:migrate`.",
+    "Migration journal (migrations/meta/_journal.json) currently has one entry at index 0.",
+    "Authentication is handled by Clerk (v7.0.6). The (auth) route group wraps pages in ClerkProvider.",
+    "User identity is accessible server-side via `currentUser()` from '@clerk/nextjs/server' (seen in Hello.tsx line 1).",
+    "No middleware.ts exists in the project. Auth protection relies on Clerk's ClerkProvider and route group structure.",
+    "i18n uses next-intl with two locales: 'en' and 'fr'. All user-visible strings must be in both locale files.",
+    "Forms use react-hook-form (v7.71.2) with @hookform/resolvers and Zod (v4.3.6) for validation.",
+    "API routes return NextResponse.json(); validation errors return status 422.",
+    "The counter API route pattern uses an upsert (insert + onConflictDoUpdate) and .returning().",
+    "Server components read data directly via db.query (e.g., CurrentCount.tsx).",
+    "Client components use 'use client' directive and fetch() to API routes.",
+    "AGENTS.md mandates: named exports, absolute imports via @/, no default exports except Next.js pages, Tailwind v4 utility classes, conventional commits.",
+    "Quality gates: lint (ultracite check --type-aware --type-check), check:types (tsc --noEmit), check:deps (knip), check:i18n (i18n-check).",
+    "Testing stack: Vitest for unit tests (*.test.ts), Playwright for integration (*.spec.ts) and e2e (*.e2e.ts).",
+    "Pre-commit hooks via lefthook: commitlint for commit messages, ultracite for lint/format, knip for unused dependency detection.",
+    "The counter feature is in the (marketing) route group (public). A user-specific favorites feature should be in the (auth) route group (protected).",
+    "DBConnection.ts uses `import * as schema` wildcard, so new schema exports are automatically picked up.",
+    "Next.js version is 16.2.1 with React 19.2.4 and React Compiler enabled in production."
+  ],
+  "unknowns": [
+    "Whether 'changeable list' implies full CRUD (create, read, update, delete) or a simpler add/remove toggle pattern.",
+    "Whether the favorite restaurants list should be user-scoped (per authenticated user) or global. User-scoping is strongly implied by 'my favorite' but not confirmed.",
+    "What data fields a restaurant entry should have (name only, or also address, cuisine type, rating, notes, etc.).",
+    "Whether restaurants should be a fixed catalog the user selects from, or free-form entries the user creates.",
+    "Whether list ordering/reordering is part of the 'changeable' requirement.",
+    "Whether the feature needs its own dedicated page/route or should be embedded in the existing dashboard page.",
+    "How Clerk user IDs should be stored in the DB (the current schema has no user-scoping pattern to reference)."
+  ]
+}
