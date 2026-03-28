@@ -1,0 +1,48 @@
+{
+  "questions": [
+    "What are the exact files to change and in what order?",
+    "What is the correct SVG format for the placeholder logo?",
+    "How should the sign-in page be structured to show the logo above the Clerk form?",
+    "What i18n keys are needed and in which namespaces?",
+    "What quality gates must pass after implementation?"
+  ],
+  "answers": [
+    {
+      "answer": "Four files in order: (1) Create public/assets/images/finesse-logo.svg, (2) Update src/locales/en.json to add SignIn.logo_alt key, (3) Update src/locales/fr.json to add SignIn.logo_alt key, (4) Update src/app/[locale]/(auth)/(center)/sign-in/[[...sign-in]]/page.tsx to import and render the logo. The locale files must be updated before or alongside the page to pass i18n checks.",
+      "evidence": [
+        "tech-research/tech-research.md Summary Table: 'Files changed: 4 (sign-in page.tsx, en.json, fr.json, new SVG asset)'",
+        "scout/reference-map.json lists these as the relevant files"
+      ]
+    },
+    {
+      "answer": "The SVG should have xmlns='http://www.w3.org/2000/svg' and a viewBox attribute for proper scaling with next/image. It should be a minimal text-based logo with 'Finesse' rendered in a clean style, under 2KB. Existing SVGs in the repo (posthog-logo.svg, arcjet-light.svg) use inline paths with viewBox.",
+      "evidence": [
+        "public/assets/images/posthog-logo.svg: uses xmlns and viewBox='0 0 800 140'",
+        "tech-research/tech-research.md: 'SVG is scalable, lightweight (<1KB for a text logo), and resolution-independent'"
+      ]
+    },
+    {
+      "answer": "Wrap the logo Image and SignIn component in a div with classes 'flex flex-col items-center gap-6'. The Image uses a static import with width={200}. The parent (center)/layout.tsx already provides min-h-screen centering, so the page only needs vertical stacking.",
+      "evidence": [
+        "tech-research/tech-research.md Decision 3: 'Wrap the logo <Image> and <SignIn /> component in a <div> with Tailwind classes flex flex-col items-center gap-6'",
+        "src/app/[locale]/(auth)/(center)/layout.tsx line 11: 'flex min-h-screen items-center justify-center'"
+      ]
+    },
+    {
+      "answer": "Add 'logo_alt' key to the SignIn namespace in both en.json ('Finesse logo') and fr.json ('Logo Finesse'). The page component uses getTranslations with namespace 'SignIn' to access t('logo_alt') for the Image alt prop.",
+      "evidence": [
+        "tech-research/tech-research.md Decision 4: 'en.json -> SignIn.logo_alt: Finesse logo' and 'fr.json -> SignIn.logo_alt: Logo Finesse'",
+        "AGENTS.md: 'Never hard-code user-visible strings'"
+      ]
+    },
+    {
+      "answer": "Six quality gates: bun run lint (ultracite), bun run check:types (tsc), bun run check:deps (knip), bun run check:i18n (i18n-check), bun run test (vitest), bun run build-local (next build with in-memory PGlite). All must exit with code 0.",
+      "evidence": [
+        "package.json scripts: lint, check:types, check:deps, check:i18n, test, build-local",
+        "AGENTS.md Commands section: 'Only these bun run scripts: build-local, lint, check:types, check:deps, check:i18n, test, test:e2e'"
+      ]
+    }
+  ],
+  "statement": "The implementation plan covers 4 atomic steps: (1) create a placeholder Finesse SVG logo at public/assets/images/finesse-logo.svg, (2) add i18n alt-text keys to en.json and fr.json under the SignIn namespace, (3) update the sign-in page to import and render the logo above the Clerk SignIn component using next/image with a flex-col wrapper, and (4) verify all quality gates pass. The plan touches 4 files total with no new dependencies, scoped to the sign-in page only.",
+  "followups": []
+}
