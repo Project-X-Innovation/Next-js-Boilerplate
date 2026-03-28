@@ -1,0 +1,63 @@
+{
+  "questions": [
+    "Q1: What schema design best fits a user-scoped favorites table in the existing Drizzle ORM + PostgreSQL setup?",
+    "Q2: How should API routes authenticate requests and scope data to the current user using Clerk?",
+    "Q3: Should the feature use a single API route file (GET/POST/DELETE) or separate route files?",
+    "Q4: What is the correct pattern for delete operations in Drizzle ORM with returning?",
+    "Q5: Should the UI use server actions or API routes for mutations, given the existing codebase patterns?",
+    "Q6: What Vercel/React best practices apply to the server component + client form architecture?"
+  ],
+  "answers": [
+    {
+      "answer": "A new `favoriteRestaurantsSchema` pgTable with columns: `id` (serial PK), `userId` (text, not null), `name` (text, not null), `updatedAt` (timestamp with $onUpdate), `createdAt` (timestamp with defaultNow). The `text` type for userId matches Clerk's string-based user IDs (e.g., `user_xxxx`). The timestamp columns follow the exact pattern used by `counterSchema`. No composite unique constraint on (userId, name) since the product spec allows duplicates.",
+      "evidence": [
+        "src/models/Schema.ts lines 16-24: counterSchema pattern uses serial, integer, timestamp with $onUpdate and defaultNow",
+        "Drizzle ORM docs: pgTable with text().notNull() for string columns, serial().primaryKey() for auto-increment",
+        "Clerk docs: userId is a string identifier accessed via auth().userId",
+        "product/product.md Open Questions #4: 'Product assumption: allow duplicates for MVP simplicity'"
+      ]
+    },
+    {
+      "answer": "API routes should use `auth()` from `@clerk/nextjs/server` (not `currentUser()`) to get the userId. `auth()` is lighter weight - it returns just the auth state without fetching the full user object. Each handler must check `isAuthenticated` and return 401 if false, then scope all DB queries to the extracted `userId`. This follows the Clerk docs pattern for route handler protection and aligns with Vercel best practice `server-auth-actions` (authenticate every mutation endpoint).",
+      "evidence": [
+        "Clerk docs (clerk-docs): 'const { isAuthenticated, userId } = await auth()' pattern for route handlers",
+        "Clerk docs: auth() is lighter than currentUser() - returns Auth object without Backend User fetch",
+        "src/components/Hello.tsx uses currentUser() for display but API routes only need userId",
+        "Vercel best practice server-auth-actions: 'Always verify authentication and authorization inside each Server Action/API route'"
+      ]
+    },
+    {
+      "answer": "Use a single route file at `src/app/[locale]/api/favorite-restaurants/route.ts` exporting GET, POST, and DELETE handlers. This follows the Next.js App Router convention where one route.ts file can export multiple HTTP method handlers. The existing counter uses a single route.ts with PUT. A single file keeps the feature cohesive and avoids unnecessary directory nesting.",
+      "evidence": [
+        "src/app/[locale]/api/counter/route.ts: single file exporting PUT handler",
+        "Next.js App Router convention: route.ts can export GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS"
+      ]
+    },
+    {
+      "answer": "Drizzle ORM supports `db.delete(table).where(condition).returning()` for PostgreSQL. The delete should use `and(eq(schema.id, id), eq(schema.userId, userId))` to ensure users can only delete their own entries. The `.returning()` call confirms what was deleted.",
+      "evidence": [
+        "Drizzle ORM docs: 'const deletedUsers = await db.delete(users).where(eq(users.verified, false)).returning()'",
+        "Drizzle ORM docs: eq() and and() operators for compound where clauses"
+      ]
+    },
+    {
+      "answer": "Use API routes (fetch from client components), not server actions. The existing codebase exclusively uses the API route + client fetch + router.refresh() pattern (CounterForm.tsx). There are no server actions in the codebase. Following the established pattern ensures consistency and avoids introducing a new paradigm. The client form component will fetch POST/DELETE to the API route and call router.refresh() to update the server-rendered list.",
+      "evidence": [
+        "src/components/CounterForm.tsx: fetch('/api/counter', { method: 'PUT' }) then router.refresh()",
+        "No 'use server' action files exist anywhere in the codebase",
+        "AGENTS.md does not mention server actions as a pattern"
+      ]
+    },
+    {
+      "answer": "Key Vercel/React best practices that apply: (1) `async-parallel` - when the page needs both translations and data, fetch them concurrently with Promise.all(). (2) `server-auth-actions` - authenticate every API mutation. (3) `server-serialization` - minimize data passed from server to client components; only pass the fields the client needs (id, name for list items). (4) The server component should read data directly via db.query (no API call), consistent with CurrentCount.tsx pattern. (5) No useMemo/useCallback per AGENTS.md since React Compiler handles optimization.",
+      "evidence": [
+        "Vercel rules: async-parallel (CRITICAL), server-auth-actions (CRITICAL), server-serialization (HIGH)",
+        "AGENTS.md: 'No useMemo/useCallback (React compiler handles it)'",
+        "src/components/CurrentCount.tsx: server component reads db.query directly",
+        "package.json: babel-plugin-react-compiler in devDependencies"
+      ]
+    }
+  ],
+  "statement": "The favorite restaurants feature requires a new Drizzle pgTable with user-scoping via Clerk userId (text column), a single API route file handling GET/POST/DELETE with auth() verification, Zod validation schemas, a server component for list display with direct DB reads, a client component form using fetch + router.refresh(), i18n keys in both locales, and a Playwright integration test suite. All patterns follow the established counter feature vertical slice. No new dependencies are needed.",
+  "followups": []
+}
