@@ -1,0 +1,55 @@
+{
+  "questions": [
+    "Q1: What is the correct sequence of implementation steps to build the favorite restaurants feature?",
+    "Q2: What files need to be created or modified, and what are their dependencies?",
+    "Q3: What verification commands can an automated agent run to validate each step?",
+    "Q4: What are the critical safety invariants (auth, user-scoping) that must hold across all steps?",
+    "Q5: How should integration tests handle the Clerk auth boundary for API route testing?"
+  ],
+  "answers": [
+    {
+      "answer": "The implementation follows a bottom-up sequence: (1) schema, (2) migration, (3) validation, (4) API route, (5) server component, (6) client component, (7) page, (8) navigation link, (9) i18n strings, (10) integration tests, (11) quality gate sweep. Each step depends on the outputs of prior steps (e.g., API route depends on schema + validation; components depend on API route; page depends on components).",
+      "evidence": [
+        "src/models/Schema.ts: schema must exist before migration generation",
+        "src/validations/CounterValidation.ts: validation imported by API route",
+        "src/app/[locale]/api/counter/route.ts: API route imports schema + validation",
+        "src/components/CounterForm.tsx: client component fetches API route",
+        "src/components/CurrentCount.tsx: server component reads DB directly"
+      ]
+    },
+    {
+      "answer": "New files: src/validations/FavoriteRestaurantValidation.ts, src/app/[locale]/api/favorite-restaurants/route.ts, src/components/FavoriteRestaurantList.tsx, src/components/FavoriteRestaurantForm.tsx, src/app/[locale]/(auth)/dashboard/favorite-restaurants/page.tsx, tests/integration/FavoriteRestaurant.spec.ts, and a generated migration file. Modified files: src/models/Schema.ts (add table), src/app/[locale]/(auth)/dashboard/layout.tsx (add nav link), src/locales/en.json (add keys), src/locales/fr.json (add keys).",
+      "evidence": [
+        "tech-research/tech-research.md: file structure defined with specific paths",
+        "diagnosis/diagnosis-statement.md: lists all required components",
+        "product/product.md: MVP scope confirms add/view/remove only"
+      ]
+    },
+    {
+      "answer": "Quality gates are the primary automated verification: bun run lint, bun run check:types, bun run check:deps, bun run check:i18n, bun run build-local, bun run test, bun run test:e2e. These are all configured and runnable per package.json. Browser verification requires the dev server running with Clerk credentials.",
+      "evidence": [
+        "package.json lines 14-18: lint, check:types, check:deps, check:i18n scripts",
+        "package.json line 22: test:e2e runs playwright",
+        "playwright.config.ts: webServer auto-starts with PGlite in-memory for test:e2e"
+      ]
+    },
+    {
+      "answer": "Every API handler must: (1) call auth() from @clerk/nextjs/server, (2) check userId exists (return 401 if not), (3) scope all DB queries to that userId. The DELETE handler must use both id AND userId in the WHERE clause to prevent cross-user deletion. These invariants must hold across GET, POST, and DELETE.",
+      "evidence": [
+        "tech-research/tech-research.md: 'Critical: DELETE WHERE must always include both id AND userId conditions'",
+        "diagnosis/diagnosis-statement.md: 'API routes must verify the user is authenticated and scope all queries to userId'",
+        "tech-research/tech-research.md Risk #1 and #5: auth omission and cross-user deletion risks"
+      ]
+    },
+    {
+      "answer": "The counter integration tests work without auth because the counter API is public. Favorite restaurant routes require Clerk auth. Integration tests should test: (1) validation errors return 422 or the auth boundary returns 401 for unauthenticated requests — both outcomes validate correct behavior. Full CRUD testing with authenticated sessions would require Clerk test configuration which is outside MVP scope.",
+      "evidence": [
+        "tests/integration/Counter.spec.ts: public API tests without auth",
+        "playwright.config.ts: no Clerk test setup configured",
+        "src/app/[locale]/api/counter/route.ts: no auth() call in counter route"
+      ]
+    }
+  ],
+  "statement": "The implementation plan defines 11 atomic, sequenced steps to build a user-scoped favorite restaurants feature following the existing counter vertical-slice pattern. Steps proceed bottom-up from schema through migration, validation, API route, components, page, navigation, i18n, tests, and quality gates. All patterns mirror existing code. No new dependencies are needed. Eight required verification checks cover lint, types, deps, i18n, build, integration tests, browser interaction, and schema integrity.",
+  "followups": []
+}
