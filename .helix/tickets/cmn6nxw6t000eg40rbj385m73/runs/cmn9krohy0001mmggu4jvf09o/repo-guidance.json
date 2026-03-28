@@ -1,0 +1,10 @@
+{
+  "repos": [
+    {
+      "repoKey": "next-js-boilerplate",
+      "intent": "target",
+      "rationale": "Single repository containing the sign-in page, auth layouts, and public assets directory. All changes (new SVG logo asset + sign-in page modification) are scoped to this repo."
+    }
+  ],
+  "updatedBy": "diagnosis"
+}

@@ -1,0 +1,49 @@
+{
+  "questions": [
+    "Where is the login page and what does it currently render?",
+    "Does a PX logo asset already exist in the repository?",
+    "What is the best placement approach for the logo (page-level, layout-level, or Clerk appearance API)?",
+    "What is the existing pattern for rendering logos in this codebase?",
+    "What does 'PX' refer to and what logo format is appropriate?"
+  ],
+  "answers": [
+    {
+      "answer": "The login page is at src/app/[locale]/(auth)/(center)/sign-in/[[...sign-in]]/page.tsx. It renders only the Clerk <SignIn> component with no surrounding content, wrapped by a center layout that provides min-h-screen flex centering.",
+      "evidence": [
+        "src/app/[locale]/(auth)/(center)/sign-in/[[...sign-in]]/page.tsx line 29: returns only <SignIn path={getI18nPath('/sign-in', locale)} />",
+        "src/app/[locale]/(auth)/(center)/layout.tsx line 11: <div className=\"flex min-h-screen items-center justify-center\">{props.children}</div>"
+      ]
+    },
+    {
+      "answer": "No PX logo asset exists anywhere in the repository. The public/assets/images/ directory contains only sponsor/third-party logos (clerk, sentry, arcjet, crowdin, etc.) and boilerplate screenshots. No file matching 'px', 'project-x', or similar exists.",
+      "evidence": [
+        "ls public/assets/images/ shows 18 files, none PX-related",
+        "Grep for '(?i)(project.?x|px.?logo|px.?brand)' found matches only in .helix ticket/scout artifacts, not in source code"
+      ]
+    },
+    {
+      "answer": "The simplest and most appropriate approach is to add the logo above the Clerk <SignIn> component in the sign-in page component. This scopes the change to the login page as the ticket requests. The center layout approach would also affect sign-up (not requested). The Clerk appearance API could set logoImageUrl but would require configuring Clerk's internal branding system, which is more complex than needed.",
+      "evidence": [
+        "Ticket says 'PX Logo on login page' - singular, scoped to login",
+        "src/app/[locale]/(auth)/(center)/layout.tsx is shared with sign-up page",
+        "src/app/[locale]/(auth)/layout.tsx ClerkProvider appearance only has cssLayerName currently"
+      ]
+    },
+    {
+      "answer": "The codebase uses next/image with static imports from @/public/assets/images/ for logo rendering. The Sponsors.tsx component demonstrates this pattern with width props and alt text.",
+      "evidence": [
+        "src/components/Sponsors.tsx lines 2-10: static imports like `import clerkLogo from '@/public/assets/images/clerk-logo-dark.png'`",
+        "src/components/Sponsors.tsx line 19: `<Image src={clerkLogo} alt=\"...\" width={220} />`"
+      ]
+    },
+    {
+      "answer": "'PX' most likely refers to 'Project X' based on the GitHub organization name 'Project-X-Innovation'. Since no logo asset exists, one must be created. An SVG is the best format for a text-based logo (scalable, small file size, matches existing SVG assets in the project). A simple text-based SVG with 'PX' branding is appropriate as a placeholder that can be replaced with a proper brand asset later.",
+      "evidence": [
+        "ticket.md line 7: repo_url: https://github.com/Project-X-Innovation/Next-js-Boilerplate",
+        "public/assets/images/ already contains SVG files (arcjet-dark.svg, arcjet-light.svg, coderabbit-logo-*.svg, posthog-logo.svg)"
+      ]
+    }
+  ],
+  "statement": "The login page currently renders only the Clerk <SignIn> component with no custom branding. The ticket requests adding a PX (Project X) logo to this page. No PX logo asset exists in the repository. The fix requires: (1) creating an SVG logo asset in public/assets/images/, and (2) modifying the sign-in page component to render the logo above the Clerk sign-in form using the established next/image pattern. The change is scoped to the sign-in page only, as the ticket specifically says 'login page'.",
+  "followups": []
+}
