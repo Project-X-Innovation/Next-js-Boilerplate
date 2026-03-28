@@ -1,0 +1,43 @@
+{
+  "questions": [
+    "What is the best approach for creating a PX logo SVG asset with no design spec provided?",
+    "Should the logo be rendered via next/image static import or inline SVG?",
+    "What is the correct page-level modification pattern to add content above the Clerk <SignIn> component without breaking the existing flex centering layout?",
+    "Are there any Tailwind v4 CSS layer ordering concerns when adding custom styled elements alongside Clerk components?"
+  ],
+  "answers": [
+    {
+      "answer": "A simple, clean SVG with the letters 'PX' in a styled text element is the most appropriate approach. The SVG should use a standard viewBox, solid fill color, and bold/semi-bold font weight to look professional as a brand placeholder. The file should be placed at public/assets/images/px-logo.svg following the established asset naming convention (lowercase, hyphenated). File size will be minimal (~1KB) since it's text-based.",
+      "evidence": [
+        "public/assets/images/ contains existing SVG files: arcjet-dark.svg, arcjet-light.svg, coderabbit-logo-dark.svg, coderabbit-logo-light.svg, posthog-logo.svg",
+        "Existing SVGs range from 2.5KB to 9.6KB; a text-based logo SVG will be much smaller",
+        "Product spec states: 'No design spec: The ticket provides no dimensions, spacing, or visual design guidance for the logo. A sensible default consistent with the page layout should be used.'"
+      ]
+    },
+    {
+      "answer": "Use next/image with a static import from @/public/assets/images/px-logo.svg. This is the established pattern in the codebase (Sponsors.tsx, counter/page.tsx, portfolio page). Static imports let Next.js optimize the image and provide proper width/height metadata. Inline SVG would work but breaks the established pattern and misses Next.js image optimization.",
+      "evidence": [
+        "src/components/Sponsors.tsx lines 2,6,9: static SVG imports with next/image: import arcjetLogo from '@/public/assets/images/arcjet-light.svg'",
+        "src/app/[locale]/(marketing)/counter/page.tsx line 7: same pattern used in page components",
+        "AGENTS.md: 'Absolute imports via @/ unless same directory'"
+      ]
+    },
+    {
+      "answer": "Wrap the logo and <SignIn> component in a flex column container inside the sign-in page component. The parent center layout already provides min-h-screen centering (items-center justify-center), so the page just needs to stack the logo above the sign-in form vertically. A simple flex-col items-center wrapper with a margin-bottom on the logo element achieves this without modifying the shared layout.",
+      "evidence": [
+        "src/app/[locale]/(auth)/(center)/layout.tsx line 11: <div className='flex min-h-screen items-center justify-center'>{props.children}</div>",
+        "src/app/[locale]/(auth)/(center)/sign-in/[[...sign-in]]/page.tsx line 29: currently returns only <SignIn>",
+        "Product spec: 'Shared layout caution: changes should be made at the page level, not the layout level, to keep the sign-up page unaffected'"
+      ]
+    },
+    {
+      "answer": "No CSS layer conflicts expected. The global CSS defines layer order: theme, base, clerk, components, utilities. Custom Tailwind utility classes on the logo wrapper will be in the 'utilities' layer, which has highest precedence. The logo is a standard HTML/next-image element, not a Clerk component, so it won't interact with the 'clerk' layer at all.",
+      "evidence": [
+        "src/styles/global.css line 1: @layer theme, base, clerk, components, utilities;",
+        "The logo is rendered via next/image outside any Clerk component - no Clerk CSS layer interaction"
+      ]
+    }
+  ],
+  "statement": "The implementation requires two changes: (1) Create a simple PX logo SVG file at public/assets/images/px-logo.svg, and (2) Modify the sign-in page component to import and render the logo above the Clerk <SignIn> component using a flex-col wrapper with next/image. The approach uses the established static import + next/image pattern from Sponsors.tsx, modifies only the sign-in page (not shared layouts), and requires no new dependencies or CSS changes.",
+  "followups": []
+}
