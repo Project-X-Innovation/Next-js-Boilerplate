@@ -1,0 +1,49 @@
+{
+  "questions": [
+    "Where is the logon (sign-in) page and what does it currently render?",
+    "Does a Finesse logo asset exist anywhere in the repository?",
+    "What is the established pattern for displaying logo images in this codebase?",
+    "Where should the logo be placed — only on sign-in, or on sign-up too?",
+    "What i18n and coding conventions must be followed when adding the logo?"
+  ],
+  "answers": [
+    {
+      "answer": "The sign-in page is at src/app/[locale]/(auth)/(center)/sign-in/[[...sign-in]]/page.tsx. It renders only Clerk's <SignIn /> component (line 29) with no custom branding. It is wrapped by a centered layout at src/app/[locale]/(auth)/(center)/layout.tsx that provides 'flex min-h-screen items-center justify-center' (line 11).",
+      "evidence": [
+        "src/app/[locale]/(auth)/(center)/sign-in/[[...sign-in]]/page.tsx:29 — return <SignIn path={getI18nPath('/sign-in', locale)} />;",
+        "src/app/[locale]/(auth)/(center)/layout.tsx:11 — <div className=\"flex min-h-screen items-center justify-center\">"
+      ]
+    },
+    {
+      "answer": "No Finesse logo asset exists in the repository. No file or string matching 'finesse' (case-insensitive) was found anywhere in the codebase. The public/assets/images/ directory contains 18 files, all sponsor/partner logos — none related to Finesse. No logo was attached to the ticket.",
+      "evidence": [
+        "Scout reference-map.json fact: 'No file or string matching finesse (case-insensitive) exists in the repository source code'",
+        "ls public/assets/images/ shows 18 files, none containing 'finesse'"
+      ]
+    },
+    {
+      "answer": "The established pattern (Sponsors.tsx) uses static imports from @/public/assets/images/ with the next/image <Image> component. Both SVG and PNG formats are used. Images are given explicit width props and descriptive alt text.",
+      "evidence": [
+        "src/components/Sponsors.tsx:1-10 — imports from @/public/assets/images/ using next/image",
+        "src/components/Sponsors.tsx:18-23 — <Image src={clerkLogo} alt='...' width={220} />"
+      ]
+    },
+    {
+      "answer": "The ticket says 'logon page' (singular), indicating the sign-in page specifically. The centered layout wraps both sign-in and sign-up, but the most literal interpretation targets only the sign-in page. Adding the logo to the sign-in page component (not the shared layout) is the minimal-impact approach.",
+      "evidence": [
+        "Ticket title: 'Finesse logo on logon page' — singular 'logon page' = sign-in",
+        "src/app/[locale]/(auth)/(center)/layout.tsx wraps both sign-in and sign-up"
+      ]
+    },
+    {
+      "answer": "Per AGENTS.md: all user-visible strings (including alt text) must use i18n translation keys via next-intl. The SignIn namespace in en.json and fr.json currently has only meta_title and meta_description. A new key for the logo alt text must be added to both locale files. Named exports are required (except Next.js pages). Tailwind v4 utility classes for styling.",
+      "evidence": [
+        "AGENTS.md: 'Never hard-code user-visible strings'",
+        "src/locales/en.json:55-58 — SignIn namespace has meta_title and meta_description only",
+        "src/locales/fr.json:55-58 — mirrors en.json SignIn namespace"
+      ]
+    }
+  ],
+  "statement": "The sign-in page has no custom branding; it renders only Clerk's <SignIn /> component. No Finesse logo asset exists in the repo or was attached to the ticket. The fix requires: (1) creating a Finesse logo asset (SVG is preferred for scalability, matching existing patterns), (2) placing it in public/assets/images/, (3) importing and rendering it above the <SignIn /> component in the sign-in page, (4) adding i18n alt-text keys to en.json and fr.json under the SignIn namespace, and (5) wrapping the logo and sign-in form in a flex column container for vertical stacking. Since no actual logo file was provided, a simple SVG text-based logo for 'Finesse' should be created as a reasonable placeholder. The change is scoped to the sign-in page only, per the ticket's singular 'logon page' wording.",
+  "followups": []
+}
