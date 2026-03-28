@@ -1,0 +1,10 @@
+[
+  {
+    "repoKey": "next-js-boilerplate",
+    "name": "web",
+    "port": 3000,
+    "buildArguments": {
+      "NEXT_PUBLIC_APP_URL": "{{web}}"
+    }
+  }
+]
