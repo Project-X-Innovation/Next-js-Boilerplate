@@ -2,59 +2,60 @@
 
 ## Overview
 
-Add a user-scoped "favorite restaurants" feature to the authenticated dashboard area. The implementation follows the existing counter feature vertical-slice pattern: Drizzle schema, migration, API route, Zod validation, server component (list display), client component (form + delete), i18n strings, navigation link, and integration tests. No new dependencies are needed.
+Build a user-scoped favorite restaurants list feature as a new dashboard sub-page. The implementation follows the existing counter vertical-slice pattern: Drizzle schema, migration, Zod validation, API route (GET/POST/DELETE), server component for display, client components for add form and per-item delete, dashboard navigation link, and i18n strings in both locales. No new dependencies are needed.
 
 ## Implementation Principles
 
-- **Follow existing patterns**: Mirror the counter feature (schema, API route, validation, form, server component, i18n, tests) exactly.
-- **Minimal data model**: One table, one text field (name) + user scoping via Clerk userId.
-- **User-scoped by default**: Every DB query is filtered to the authenticated user's Clerk ID.
-- **Named exports only**: Per AGENTS.md, except for the Next.js page component.
-- **No new dependencies**: The existing stack covers all needs.
+- Follow the counter feature vertical-slice pattern exactly (schema, validation, API route, client form, server display, i18n).
+- Use `auth()` from `@clerk/nextjs/server` (not `currentUser()`) for lightweight user identity.
+- Named exports only (except the Next.js page default export).
+- Absolute imports via `@/`.
+- Tailwind v4 utility classes for styling, matching existing design language.
+- All user-visible strings via next-intl (en + fr), sentence case.
+- No new dependencies.
 
 ## Implementation Steps Summary
 
 | Step | Goal | Deliverable |
 |------|------|-------------|
-| 1 | Define database schema | `src/models/Schema.ts` updated with `favoriteRestaurantsSchema` |
+| 1 | Define database schema | `src/models/Schema.ts` updated with `favoriteRestaurantSchema` |
 | 2 | Generate database migration | New migration file in `migrations/` |
 | 3 | Create Zod validation schemas | `src/validations/FavoriteRestaurantValidation.ts` |
-| 4 | Create API route (GET/POST/DELETE) | `src/app/[locale]/api/favorite-restaurants/route.ts` |
-| 5 | Create server component for list display | `src/components/FavoriteRestaurantList.tsx` |
-| 6 | Create client component for add form + delete | `src/components/FavoriteRestaurantForm.tsx` |
-| 7 | Create favorites page | `src/app/[locale]/(auth)/dashboard/favorite-restaurants/page.tsx` |
-| 8 | Add navigation link in dashboard layout | `src/app/[locale]/(auth)/dashboard/layout.tsx` updated |
-| 9 | Add i18n strings (en + fr) | `src/locales/en.json` and `src/locales/fr.json` updated |
-| 10 | Create integration tests | `tests/integration/FavoriteRestaurant.spec.ts` |
-| 11 | Run quality gates and fix issues | All gates pass: lint, type-check, dep-check, i18n-check, build |
+| 4 | Add i18n strings | `src/locales/en.json` and `src/locales/fr.json` updated |
+| 5 | Create API route (GET/POST/DELETE) | `src/app/[locale]/api/favorite-restaurants/route.ts` |
+| 6 | Create RemoveFavoriteButton client component | `src/components/RemoveFavoriteButton.tsx` |
+| 7 | Create FavoriteRestaurantForm client component | `src/components/FavoriteRestaurantForm.tsx` |
+| 8 | Create FavoriteRestaurantList server component | `src/components/FavoriteRestaurantList.tsx` |
+| 9 | Create favorites page | `src/app/[locale]/(auth)/dashboard/favorite-restaurants/page.tsx` |
+| 10 | Add dashboard navigation link | `src/app/[locale]/(auth)/dashboard/layout.tsx` updated |
 
 ## Detailed Implementation Steps
 
 ### Step 1: Define Database Schema
 
-**Goal**: Add a `favoriteRestaurantsSchema` table to the Drizzle schema file.
+**Goal**: Add the `favoriteRestaurantSchema` table to the Drizzle ORM schema.
 
 **What to Build**:
-- Edit `src/models/Schema.ts` to add a new `pgTable` export named `favoriteRestaurantsSchema`.
-- Add import of `text` from `drizzle-orm/pg-core` (alongside existing `integer`, `pgTable`, `serial`, `timestamp`).
-- Table name: `favorite_restaurants`.
-- Columns:
-  - `id`: `serial('id').primaryKey()` — row identifier
-  - `userId`: `text('user_id').notNull()` — Clerk user ID string for scoping
-  - `name`: `text('name').notNull()` — restaurant name (free-form)
-  - `updatedAt`: `timestamp('updated_at', { mode: 'date' }).defaultNow().$onUpdate(() => new Date()).notNull()` — follows counterSchema pattern exactly
-  - `createdAt`: `timestamp('created_at', { mode: 'date' }).defaultNow().notNull()` — follows counterSchema pattern exactly
-- No unique constraint on `(userId, name)` — duplicates are allowed per product spec.
-- No foreign key — Clerk manages users externally.
+- Edit `src/models/Schema.ts`:
+  - Add `text` to the existing import from `drizzle-orm/pg-core` (current imports: `integer, pgTable, serial, timestamp`).
+  - Add a new named export `favoriteRestaurantSchema` using `pgTable('favorite_restaurant', { ... })`.
+  - Columns:
+    - `id`: `serial('id').primaryKey()`
+    - `userId`: `text('user_id').notNull()`
+    - `name`: `text('name').notNull()`
+    - `updatedAt`: `timestamp('updated_at', { mode: 'date' }).defaultNow().$onUpdate(() => new Date()).notNull()`
+    - `createdAt`: `timestamp('created_at', { mode: 'date' }).defaultNow().notNull()`
+  - Follow the exact `counterSchema` timestamp pattern (lines 19-23 of current file).
+  - No unique constraint on `(userId, name)` — duplicates allowed per product spec.
+  - No foreign key to a users table — Clerk manages users externally.
+- Note: `src/utils/DBConnection.ts` uses `import * as schema from '@/models/Schema'`, so the new export is auto-discovered without changes there.
 
 **Verification (AI Agent Runs)**:
-- `bun run check:types` — confirms the new schema export type-checks.
-- Visually confirm the new export follows the `counterSchema` pattern in the same file.
+- `bun run check:types` passes.
 
 **Success Criteria**:
-- `favoriteRestaurantsSchema` is exported from `src/models/Schema.ts` with all 5 columns.
+- `favoriteRestaurantSchema` is exported from `src/models/Schema.ts` with all 5 columns.
 - TypeScript compilation succeeds.
-- The wildcard `import * as schema` in `src/utils/DBConnection.ts` will automatically pick up the new export (no changes needed there).
 
 ---
 
@@ -63,256 +64,267 @@ Add a user-scoped "favorite restaurants" feature to the authenticated dashboard 
 **Goal**: Produce a Drizzle migration SQL file for the new table.
 
 **What to Build**:
-- Run `bun run db:generate` to generate a new migration in `migrations/`.
-- This produces a new `.sql` file (e.g., `0001_*.sql`) with `CREATE TABLE favorite_restaurants`.
-- The migration journal (`migrations/meta/_journal.json`) will get a new entry at index 1.
+- Run `npm run db:generate` (drizzle-kit generate).
+- This reads `src/models/Schema.ts` via `drizzle.config.ts` and produces a new `.sql` migration file in `migrations/`.
+- The migration will contain `CREATE TABLE "favorite_restaurant"`.
 
 **Verification (AI Agent Runs)**:
-- Confirm a new migration SQL file exists in `migrations/` containing `CREATE TABLE "favorite_restaurants"`.
-- Confirm the migration journal has a new entry.
+- A new migration SQL file exists in `migrations/` (alongside existing `0000_init-db.sql`).
+- The migration file contains `CREATE TABLE "favorite_restaurant"` with columns `id`, `user_id`, `name`, `updated_at`, `created_at`.
 
 **Success Criteria**:
-- A migration file exists that creates the `favorite_restaurants` table with columns `id`, `user_id`, `name`, `updated_at`, `created_at`.
-- Migration journal updated.
+- New migration file generated with correct DDL.
 
 ---
 
 ### Step 3: Create Zod Validation Schemas
 
-**Goal**: Define validation schemas for the add and delete API operations.
+**Goal**: Define validation schemas for add and delete API operations.
 
 **What to Build**:
-- Create `src/validations/FavoriteRestaurantValidation.ts`.
-- Follow the `CounterValidation.ts` pattern: `import * as z from 'zod'`, named exports.
-- Export `AddFavoriteRestaurantValidation`: `z.object({ name: z.string().min(1).max(255) })` — non-empty name with max length.
-- Export `DeleteFavoriteRestaurantValidation`: `z.object({ id: z.number().int().positive() })` — positive integer ID.
+- Create `src/validations/FavoriteRestaurantValidation.ts`:
+  - `import * as z from 'zod';` (follows `CounterValidation.ts` import pattern).
+  - Export `AddFavoriteRestaurantValidation`: `z.object({ name: z.string().min(1).max(255) })`.
+  - Export `RemoveFavoriteRestaurantValidation`: `z.object({ id: z.number().int().positive() })`.
+  - Named exports only.
+  - Add JSDoc for each export.
 
 **Verification (AI Agent Runs)**:
-- `bun run check:types` — confirms types are valid.
-- `bun run check:deps` — confirms exports are not flagged as unused (they will be imported in step 4).
+- `bun run check:types` passes.
 
 **Success Criteria**:
-- Two named validation exports in `src/validations/FavoriteRestaurantValidation.ts`.
-- Both use `z.object()` with appropriate constraints.
+- Two named validation exports with correct constraints.
+- File follows `CounterValidation.ts` pattern.
 
 ---
 
-### Step 4: Create API Route (GET/POST/DELETE)
+### Step 4: Add i18n Strings
 
-**Goal**: Implement CRUD API endpoints for favorite restaurants behind Clerk auth.
-
-**What to Build**:
-- Create `src/app/[locale]/api/favorite-restaurants/route.ts`.
-- Import `auth` from `@clerk/nextjs/server`, `db` from `@/libs/DB`, `favoriteRestaurantsSchema` from `@/models/Schema`, validation schemas, `eq`, `and` from `drizzle-orm`, `NextResponse` from `next/server`, `z` from `zod`.
-- **GET handler**:
-  - Call `const { userId } = await auth()`.
-  - If no userId, return 401.
-  - Query `db.select().from(favoriteRestaurantsSchema).where(eq(favoriteRestaurantsSchema.userId, userId))`.
-  - Return `NextResponse.json({ favorites: [...] })`.
-- **POST handler**:
-  - Call `const { userId } = await auth()`.
-  - If no userId, return 401.
-  - Parse body with `AddFavoriteRestaurantValidation.safeParse(json)`.
-  - On validation failure, return `NextResponse.json(z.treeifyError(parse.error), { status: 422 })` (follows counter pattern).
-  - Insert: `db.insert(favoriteRestaurantsSchema).values({ userId, name: parse.data.name }).returning()`.
-  - Return `NextResponse.json({ favorite: result[0] })`.
-- **DELETE handler**:
-  - Call `const { userId } = await auth()`.
-  - If no userId, return 401.
-  - Parse body with `DeleteFavoriteRestaurantValidation.safeParse(json)`.
-  - On validation failure, return 422.
-  - Delete: `db.delete(favoriteRestaurantsSchema).where(and(eq(favoriteRestaurantsSchema.id, parse.data.id), eq(favoriteRestaurantsSchema.userId, userId))).returning()`.
-  - Return `NextResponse.json({ favorite: result[0] })`.
-- **Critical**: DELETE must always scope by BOTH `id` AND `userId` to prevent cross-user deletion.
-
-**Verification (AI Agent Runs)**:
-- `bun run check:types` — type-checks the new route.
-- `bun run lint` — passes lint.
-
-**Success Criteria**:
-- Three exported handlers (GET, POST, DELETE) with auth checks and userId scoping.
-- Validation errors return 422 with treeified Zod errors.
-- Unauthenticated requests return 401.
-
----
-
-### Step 5: Create Server Component for List Display
-
-**Goal**: Display the user's favorite restaurants list with delete functionality.
+**Goal**: Add all user-visible strings for the feature to both locale files.
 
 **What to Build**:
-- Create `src/components/FavoriteRestaurantList.tsx`.
-- Server component (no `'use client'` directive).
-- Import `auth` from `@clerk/nextjs/server`, `db` from `@/libs/DB`, `eq` from `drizzle-orm`, `getTranslations` from `next-intl/server`, `favoriteRestaurantsSchema` from `@/models/Schema`.
-- Get userId via `const { userId } = await auth()`.
-- Query favorites: `db.select().from(favoriteRestaurantsSchema).where(eq(favoriteRestaurantsSchema.userId, userId!))`.
-- Use `getTranslations('FavoriteRestaurantList')` for i18n.
-- Render:
-  - If no favorites, show an empty-state message using an i18n key.
-  - If favorites exist, render a list (`<ul>`) with each item showing the restaurant name and a delete button.
-  - The delete button needs client interactivity, so the list items with delete actions should delegate to a client component (the `FavoriteRestaurantForm` from Step 6 will handle both add and delete).
-- **Alternative approach**: Pass the favorites data as props to the client component, which handles both add form and delete actions. This keeps the server component minimal (data fetching only) and the client component handles all interactivity. Only serialize `id` and `name` to the client (server-serialization best practice).
-
-**Verification (AI Agent Runs)**:
-- `bun run check:types` — type-checks.
-
-**Success Criteria**:
-- Named export `FavoriteRestaurantList` async server component.
-- Reads favorites from DB scoped to authenticated user.
-- Passes minimal data (id, name array) to client for rendering.
-
----
-
-### Step 6: Create Client Component for Add Form + Delete Actions
-
-**Goal**: Client component for adding restaurants and deleting from the list.
-
-**What to Build**:
-- Create `src/components/FavoriteRestaurantForm.tsx`.
-- `'use client'` directive.
-- Follow `CounterForm.tsx` pattern: `useForm` with `zodResolver`, `useTranslations`, `useRouter` from `@/libs/I18nNavigation`.
-- **Props**: Accept `favorites` as `Array<{ id: number; name: string }>` for rendering the current list.
-- **Add form**:
-  - `useForm` with `zodResolver(AddFavoriteRestaurantValidation)`, default `{ name: '' }`.
-  - On submit: `fetch('/api/favorite-restaurants', { method: 'POST', body: JSON.stringify(formData) })`.
-  - On success: `form.reset()` then `router.refresh()`.
-- **List rendering**:
-  - Render each favorite as a list item with the restaurant name and a delete button.
-  - Delete handler: `fetch('/api/favorite-restaurants', { method: 'DELETE', body: JSON.stringify({ id }) })` then `router.refresh()`.
-- **Empty state**: If `favorites` is empty, show an i18n message.
-- Use `useTranslations('FavoriteRestaurantForm')` for all user-visible strings.
-- Styling: Tailwind v4 utility classes matching the existing design language (similar to CounterForm).
-
-**Verification (AI Agent Runs)**:
-- `bun run check:types` — type-checks.
-- `bun run lint` — passes lint.
-
-**Success Criteria**:
-- Named export `FavoriteRestaurantForm` client component.
-- Add form with validation, API fetch, reset, and refresh.
-- Delete buttons per list item with API fetch and refresh.
-- Empty state message.
-- All strings from i18n, no hardcoded text.
-
----
-
-### Step 7: Create Favorites Page
-
-**Goal**: Create the page that composes the server and client components.
-
-**What to Build**:
-- Create `src/app/[locale]/(auth)/dashboard/favorite-restaurants/page.tsx`.
-- Follow `src/app/[locale]/(auth)/dashboard/page.tsx` pattern.
-- Default export `FavoriteRestaurantsPage` (pages get default export per Next.js convention).
-- Props: `{ params: Promise<{ locale: string }> }`.
-- `await props.params` → `setRequestLocale(locale)`.
-- Render `FavoriteRestaurantList` (server component that internally renders `FavoriteRestaurantForm`).
-- **No `generateMetadata`** — per AGENTS.md, dashboard pages define meta once in layout, not in each page. The existing dashboard layout already handles this convention.
-
-**Verification (AI Agent Runs)**:
-- `bun run check:types` — type-checks.
-
-**Success Criteria**:
-- Page accessible at `/[locale]/dashboard/favorite-restaurants/`.
-- Composes server component for data + client component for interactivity.
-- Follows existing dashboard page pattern.
-
----
-
-### Step 8: Add Navigation Link in Dashboard Layout
-
-**Goal**: Add a "Favorite restaurants" link in the dashboard sidebar navigation.
-
-**What to Build**:
-- Edit `src/app/[locale]/(auth)/dashboard/layout.tsx`.
-- Add a new `<li>` entry in the `leftNav` section, between the dashboard link and user profile link (or after the dashboard link).
-- Use `<Link href="/dashboard/favorite-restaurants/">` with i18n key `{t('favorite_restaurants_link')}`.
-- Styling: Same `className="border-none text-gray-700 hover:text-gray-900"` as existing links.
-
-**Verification (AI Agent Runs)**:
-- `bun run check:types` — type-checks.
-
-**Success Criteria**:
-- New nav link visible in dashboard sidebar.
-- Links to `/dashboard/favorite-restaurants/`.
-- Uses i18n key from `DashboardLayout` namespace.
-
----
-
-### Step 9: Add i18n Strings (en + fr)
-
-**Goal**: Add all feature-related i18n keys to both locale files.
-
-**What to Build**:
-- Edit `src/locales/en.json` — add keys:
-  - `"DashboardLayout"` section: add `"favorite_restaurants_link": "Favorite restaurants"`
-  - New `"FavoriteRestaurantList"` namespace: `{ "empty_state": "You have no favorite restaurants yet." }`
-  - New `"FavoriteRestaurantForm"` namespace: `{ "label_name": "Restaurant name", "button_add": "Add", "button_delete": "Delete", "error_name_required": "Name is required" }`
+- Edit `src/locales/en.json` — add these entries:
+  - In existing `"DashboardLayout"` object: add `"favorite_restaurants_link": "Favorite restaurants"`.
+  - New `"FavoriteRestaurantsPage"` namespace: `{ "meta_title": "Favorite restaurants" }`.
+  - New `"FavoriteRestaurantForm"` namespace: `{ "presentation": "Add a restaurant to your favorites list.", "label_name": "Restaurant name", "button_add": "Add", "error_name_required": "Name is required" }`.
+  - New `"FavoriteRestaurantList"` namespace: `{ "title": "My favorite restaurants", "empty_state": "No favorite restaurants yet" }`.
+  - New `"RemoveFavoriteButton"` namespace: `{ "button_remove": "Remove" }`.
 - Edit `src/locales/fr.json` — add corresponding French translations:
-  - `"DashboardLayout"` section: add `"favorite_restaurants_link": "Restaurants favoris"`
-  - New `"FavoriteRestaurantList"` namespace: `{ "empty_state": "Vous n'avez pas encore de restaurants favoris." }`
-  - New `"FavoriteRestaurantForm"` namespace: `{ "label_name": "Nom du restaurant", "button_add": "Ajouter", "button_delete": "Supprimer", "error_name_required": "Le nom est requis" }`
+  - In existing `"DashboardLayout"` object: add `"favorite_restaurants_link": "Restaurants favoris"`.
+  - New `"FavoriteRestaurantsPage"` namespace: `{ "meta_title": "Restaurants favoris" }`.
+  - New `"FavoriteRestaurantForm"` namespace: `{ "presentation": "Ajoutez un restaurant a votre liste de favoris.", "label_name": "Nom du restaurant", "button_add": "Ajouter", "error_name_required": "Le nom est requis" }`.
+  - New `"FavoriteRestaurantList"` namespace: `{ "title": "Mes restaurants favoris", "empty_state": "Aucun restaurant favori" }`.
+  - New `"RemoveFavoriteButton"` namespace: `{ "button_remove": "Supprimer" }`.
 
 **Verification (AI Agent Runs)**:
-- `bun run check:i18n` — confirms all keys are present in both locales and none are unused.
+- `bun run check:i18n` passes (all keys present in both locales with no unused keys).
 
 **Success Criteria**:
-- All new i18n keys present in both `en.json` and `fr.json`.
-- i18n completeness check passes.
-- Keys follow sentence case convention per AGENTS.md.
+- Both locale files have matching key structures for all new namespaces.
+- Sentence case used for all values per AGENTS.md.
 
 ---
 
-### Step 10: Create Integration Tests
+### Step 5: Create API Route (GET/POST/DELETE)
 
-**Goal**: Test API routes via Playwright integration tests.
+**Goal**: Implement authenticated CRUD endpoints for favorite restaurants.
 
 **What to Build**:
-- Create `tests/integration/FavoriteRestaurant.spec.ts`.
-- Follow `Counter.spec.ts` pattern: `test.describe` with `page.request` API calls.
-- Test cases:
-  1. **POST with invalid body returns 422**: POST with `{ name: '' }` (empty name) → expect status 422.
-  2. **POST with missing name returns 422**: POST with `{}` → expect status 422.
-  3. **DELETE with invalid id returns 422**: DELETE with `{ id: 'abc' }` → expect status 422.
-  4. **DELETE with negative id returns 422**: DELETE with `{ id: -1 }` → expect status 422.
-- **Note on auth-dependent tests**: The counter tests work without auth because the counter route is public. The favorite restaurants routes require Clerk auth (`auth()` check). Tests for authenticated CRUD operations (successful add, list, delete) would require Clerk test tokens or middleware bypass, which is outside the scope of this MVP. The validation error tests (422) may also return 401 if the auth check runs before validation. If so, these tests should assert 401 for unauthenticated requests, which still validates the auth boundary.
-- Structure: top-level `describe('Favorite restaurants')` with nested `describe('Validation')` or `describe('Auth boundary')`.
+- Create `src/app/[locale]/api/favorite-restaurants/route.ts`:
+  - Import `auth` from `@clerk/nextjs/server`.
+  - Import `eq, and` from `drizzle-orm`.
+  - Import `NextResponse` from `next/server`.
+  - Import `* as z` from `zod`.
+  - Import `db` from `@/libs/DB`.
+  - Import `favoriteRestaurantSchema` from `@/models/Schema`.
+  - Import both validation schemas from `@/validations/FavoriteRestaurantValidation`.
+  - **GET handler** (named export `GET`):
+    - `const { userId } = await auth()`. If no userId, return `NextResponse.json({ error: 'Unauthorized' }, { status: 401 })`.
+    - Query: `db.select().from(favoriteRestaurantSchema).where(eq(favoriteRestaurantSchema.userId, userId))`.
+    - Return `NextResponse.json({ favorites })`.
+  - **POST handler** (named export `POST`):
+    - Auth check (same pattern).
+    - `const json = await request.json()`.
+    - `const parse = AddFavoriteRestaurantValidation.safeParse(json)`.
+    - If `!parse.success`, return `NextResponse.json(z.treeifyError(parse.error), { status: 422 })`.
+    - Insert: `db.insert(favoriteRestaurantSchema).values({ userId, name: parse.data.name }).returning()`.
+    - Return `NextResponse.json({ favorite: result[0] })`.
+  - **DELETE handler** (named export `DELETE`):
+    - Auth check (same pattern).
+    - Parse body with `RemoveFavoriteRestaurantValidation`.
+    - If validation fails, return 422.
+    - Delete: `db.delete(favoriteRestaurantSchema).where(and(eq(favoriteRestaurantSchema.id, parse.data.id), eq(favoriteRestaurantSchema.userId, userId))).returning()`.
+    - Return `NextResponse.json({ favorite: result[0] })`.
+  - Add JSDoc for each handler.
+  - **Critical safety invariant**: DELETE WHERE must always include both `id` AND `userId` to prevent cross-user deletion.
 
 **Verification (AI Agent Runs)**:
-- `bun run test:e2e` — integration tests pass.
+- `bun run check:types` passes.
+- `bun run lint` passes.
 
 **Success Criteria**:
-- Integration test file covers validation error cases and/or auth boundary.
-- Tests follow the existing naming conventions from AGENTS.md.
-- All tests pass when run with `bun run test:e2e`.
+- Three named HTTP method exports (GET, POST, DELETE).
+- Auth enforced on every handler via `auth()`.
+- Validation errors return 422 with `z.treeifyError()`.
+- Unauthenticated requests return 401.
+- DELETE uses compound WHERE with both id and userId.
 
 ---
 
-### Step 11: Run Quality Gates and Fix Issues
+### Step 6: Create RemoveFavoriteButton Client Component
 
-**Goal**: Ensure all quality gates pass with the complete implementation.
+**Goal**: Create a per-item delete button client component.
 
 **What to Build**:
-- No new code; fix any issues surfaced by quality gates.
-- Run all gates in sequence and address failures:
-  1. `bun run lint` — fix lint/format issues (ultracite).
-  2. `bun run check:types` — fix TypeScript errors.
-  3. `bun run check:deps` — fix unused dependency/export warnings (knip).
-  4. `bun run check:i18n` — fix missing/unused i18n keys.
-  5. `bun run build-local` — confirm production build succeeds.
-  6. `bun run test` — confirm Vitest unit tests still pass.
-  7. `bun run test:e2e` — confirm Playwright integration/e2e tests pass.
+- Create `src/components/RemoveFavoriteButton.tsx`:
+  - `'use client';` directive at top.
+  - Import `useTranslations` from `next-intl`.
+  - Import `useRouter` from `@/libs/I18nNavigation`.
+  - Named export `RemoveFavoriteButton` with inline props type `{ id: number }`.
+  - On click handler: call `fetch('/api/favorite-restaurants', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: props.id }) })`, then `router.refresh()`.
+  - Render a `<button>` with Tailwind styling and i18n text `t('button_remove')` from `RemoveFavoriteButton` namespace.
+  - Style the button with red/danger styling (e.g., `text-red-500 hover:text-red-700` or similar).
+  - Add JSDoc.
 
 **Verification (AI Agent Runs)**:
-- All commands above exit with code 0.
+- `bun run check:types` passes.
+- `bun run lint` passes.
 
 **Success Criteria**:
-- Zero lint errors.
-- Zero type errors.
-- Zero unused dependency warnings related to new code.
-- i18n completeness check passes.
-- Build completes successfully.
-- All existing and new tests pass.
+- Named export, `'use client'` directive.
+- Calls DELETE API with item id and refreshes page after.
+- Uses i18n for button text.
+
+---
+
+### Step 7: Create FavoriteRestaurantForm Client Component
+
+**Goal**: Create the add-restaurant form client component.
+
+**What to Build**:
+- Create `src/components/FavoriteRestaurantForm.tsx`:
+  - `'use client';` directive.
+  - Import `zodResolver` from `@hookform/resolvers/zod`.
+  - Import `useTranslations` from `next-intl`.
+  - Import `useForm` from `react-hook-form`.
+  - Import `useRouter` from `@/libs/I18nNavigation`.
+  - Import `AddFavoriteRestaurantValidation` from `@/validations/FavoriteRestaurantValidation`.
+  - Named export `FavoriteRestaurantForm`.
+  - `useTranslations('FavoriteRestaurantForm')` for i18n.
+  - `useForm({ resolver: zodResolver(AddFavoriteRestaurantValidation), defaultValues: { name: '' } })`.
+  - `handleSubmit` via `form.handleSubmit(async (formData) => { ... })`:
+    - `fetch('/api/favorite-restaurants', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData) })`.
+    - `await response.json()`.
+    - `form.reset()`.
+    - `router.refresh()`.
+  - Render `<form onSubmit={handleAdd}>`:
+    - `<p>{t('presentation')}</p>` — description text.
+    - `<label>` with `t('label_name')` and text `<input>` registered as `'name'`.
+    - Validation error display: if `form.formState.errors.name`, show `t('error_name_required')`.
+    - Submit `<button>` with `t('button_add')`, disabled during `form.formState.isSubmitting`.
+  - Tailwind styling following `CounterForm.tsx` patterns (same input, button, label, error classes).
+  - Add JSDoc.
+
+**Verification (AI Agent Runs)**:
+- `bun run check:types` passes.
+- `bun run lint` passes.
+
+**Success Criteria**:
+- Follows `CounterForm.tsx` pattern (react-hook-form + zodResolver + fetch + router.refresh).
+- Named export, `'use client'`, all text from i18n.
+- Form resets after successful submission.
+
+---
+
+### Step 8: Create FavoriteRestaurantList Server Component
+
+**Goal**: Create a server component that reads and displays the user's favorites.
+
+**What to Build**:
+- Create `src/components/FavoriteRestaurantList.tsx`:
+  - Async server component (no `'use client'` directive).
+  - Import `auth` from `@clerk/nextjs/server`.
+  - Import `eq` from `drizzle-orm`.
+  - Import `getTranslations` from `next-intl/server`.
+  - Import `db` from `@/libs/DB`.
+  - Import `favoriteRestaurantSchema` from `@/models/Schema`.
+  - Import `RemoveFavoriteButton` from `@/components/RemoveFavoriteButton`.
+  - Named export `FavoriteRestaurantList` as async function.
+  - `const t = await getTranslations('FavoriteRestaurantList')`.
+  - `const { userId } = await auth()`.
+  - Query: `db.select().from(favoriteRestaurantSchema).where(eq(favoriteRestaurantSchema.userId, userId!))`.
+  - Render:
+    - A heading with `t('title')`.
+    - If no favorites, render empty state `<p>{t('empty_state')}</p>`.
+    - If favorites exist, render a `<ul>` with each item as `<li>` showing `item.name` and `<RemoveFavoriteButton id={item.id} />`.
+  - Tailwind styling for the list.
+  - Add JSDoc.
+
+**Verification (AI Agent Runs)**:
+- `bun run check:types` passes.
+- `bun run lint` passes.
+
+**Success Criteria**:
+- Named export, async server component.
+- Reads from DB scoped to authenticated user via `auth()`.
+- Renders list items with `RemoveFavoriteButton` per item.
+- Shows empty state when no favorites exist.
+- Follows `CurrentCount.tsx` pattern.
+
+---
+
+### Step 9: Create Favorites Page
+
+**Goal**: Create the dashboard sub-page that composes the form and list components.
+
+**What to Build**:
+- Create `src/app/[locale]/(auth)/dashboard/favorite-restaurants/page.tsx`:
+  - Import `Metadata` type from `next`.
+  - Import `getTranslations, setRequestLocale` from `next-intl/server`.
+  - Import `FavoriteRestaurantForm` from `@/components/FavoriteRestaurantForm`.
+  - Import `FavoriteRestaurantList` from `@/components/FavoriteRestaurantList`.
+  - Define `FavoriteRestaurantsPageProps` type: `{ params: Promise<{ locale: string }> }`.
+  - Export `generateMetadata` function:
+    - `const { locale } = await props.params`.
+    - `const t = await getTranslations({ locale, namespace: 'FavoriteRestaurantsPage' })`.
+    - Return `{ title: t('meta_title') }`.
+  - Default export `FavoriteRestaurantsPage`:
+    - `const { locale } = await props.params`.
+    - `setRequestLocale(locale)`.
+    - Render a container `<div className="py-5 [&_p]:my-6">` (matches dashboard page pattern) with `<FavoriteRestaurantForm />` and `<FavoriteRestaurantList />`.
+  - Follow the existing `src/app/[locale]/(auth)/dashboard/page.tsx` pattern.
+
+**Verification (AI Agent Runs)**:
+- `bun run check:types` passes.
+- `bun run lint` passes.
+
+**Success Criteria**:
+- Default export ending with `Page` (per AGENTS.md).
+- `generateMetadata` with `FavoriteRestaurantsPage` namespace.
+- Composes both form and list components.
+- Located in `(auth)/dashboard/` route group for Clerk authentication.
+
+---
+
+### Step 10: Add Dashboard Navigation Link
+
+**Goal**: Add a nav link to the favorites page in the dashboard layout.
+
+**What to Build**:
+- Edit `src/app/[locale]/(auth)/dashboard/layout.tsx`:
+  - Add a new `<li>` in the `leftNav` section of `<BaseTemplate>`, after the existing "Manage your account" link (after line 37).
+  - Content: `<Link href="/dashboard/favorite-restaurants/" className="border-none text-gray-700 hover:text-gray-900">{t('favorite_restaurants_link')}</Link>`.
+  - Uses the `favorite_restaurants_link` key from the `DashboardLayout` i18n namespace (added in Step 4).
+  - No other changes to the layout file.
+
+**Verification (AI Agent Runs)**:
+- `bun run check:types` passes.
+- `bun run lint` passes.
+- `bun run check:i18n` passes.
+
+**Success Criteria**:
+- Dashboard nav now has three links in leftNav: Dashboard, Manage your account, Favorite restaurants.
+- Link uses i18n text and matches existing nav link styling.
 
 ---
 
@@ -321,91 +333,88 @@ Add a user-scoped "favorite restaurants" feature to the authenticated dashboard 
 ### Pre-conditions
 
 | Dependency | Status | Source/Evidence | Affects checks |
-|------------|--------|-----------------|----------------|
+|------------|--------|----------------|----------------|
 | Node.js >= 20 | available | `package.json` engines field | CHK-01 through CHK-07 |
 | `bun` runtime | available | Scripts reference `bun run` | CHK-01 through CHK-07 |
-| Dependencies installed (`bun install`) | available | Must run before any command | CHK-01 through CHK-07 |
-| PGlite (in-memory dev DB) | available | `db-server:memory` script uses `pglite-server`; no external DB needed | CHK-05, CHK-06, CHK-07 |
-| Clerk environment variables (`CLERK_SECRET_KEY`, `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`) | unknown | Required for auth in dev server; `src/libs/Env.ts` validates them; no dev setup config provided | CHK-06, CHK-07 |
-| Dev server running on port 3008 | available | `playwright.config.ts` starts server automatically via `webServer` config for `test:e2e`; for browser checks, start manually with `bun run dev` | CHK-06, CHK-07 |
+| npm dependencies installed (`bun install`) | available | Run before any checks | CHK-01 through CHK-07 |
+| Migration generated (Step 2) | available | `npm run db:generate` during implementation | CHK-02, CHK-06, CHK-07 |
+| PGlite dev database | available | `db-server:memory` script auto-creates in-memory PGlite for `build-local` and `test:e2e`; `db-server:file` for `dev` | CHK-05, CHK-06, CHK-07 |
+| Clerk environment variables (`CLERK_SECRET_KEY`, `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`) | unknown | Required for auth; validated in `src/libs/Env.ts`; no dev setup config provided | CHK-06, CHK-07 |
+| Clerk test user credentials | unknown | No dev setup config provides login credentials; needed to authenticate in browser | CHK-07 |
 
 ### Required Checks
 
-**[CHK-01] Lint passes with zero errors**
-- Action: Run `bun run lint` from the repository root.
-- Expected Outcome: Command exits with code 0 and no lint or type-aware errors.
-- Required Evidence: Terminal output showing successful completion with exit code 0.
+[CHK-01] Quality gates pass: lint, TypeScript, dependency check, i18n check.
+- Action: Run `bun run lint && bun run check:types && bun run check:deps && bun run check:i18n` from the repository root.
+- Expected Outcome: All four commands exit with code 0 and report no errors.
+- Required Evidence: Terminal output from each command showing successful completion with zero errors.
 
-**[CHK-02] TypeScript type-check passes**
-- Action: Run `bun run check:types` from the repository root.
-- Expected Outcome: Command exits with code 0 with no type errors.
-- Required Evidence: Terminal output showing successful completion with exit code 0.
+[CHK-02] Migration file contains correct DDL for favorite_restaurant table.
+- Action: List files in `migrations/` directory and read the newest migration file (not `0000_init-db.sql`).
+- Expected Outcome: The migration SQL contains `CREATE TABLE "favorite_restaurant"` with columns `id` (serial primary key), `user_id` (text not null), `name` (text not null), `updated_at` (timestamp default now not null), `created_at` (timestamp default now not null).
+- Required Evidence: Full contents of the new migration SQL file showing the CREATE TABLE statement with all columns and constraints.
 
-**[CHK-03] Dependency check passes**
-- Action: Run `bun run check:deps` from the repository root.
-- Expected Outcome: Command exits with code 0 with no unused exports, dependencies, or files flagged for the new code.
-- Required Evidence: Terminal output showing successful completion with exit code 0.
+[CHK-03] Schema file exports favoriteRestaurantSchema with correct columns.
+- Action: Read `src/models/Schema.ts` and verify the new `favoriteRestaurantSchema` export.
+- Expected Outcome: The file exports `favoriteRestaurantSchema` via `pgTable('favorite_restaurant', ...)` with five columns: `id` (serial PK), `userId` (text not null), `name` (text not null), `updatedAt` (timestamp with $onUpdate and defaultNow), `createdAt` (timestamp with defaultNow). The timestamp pattern matches the existing `counterSchema` exactly.
+- Required Evidence: File contents of `src/models/Schema.ts` showing both the existing counterSchema and the new favoriteRestaurantSchema.
 
-**[CHK-04] i18n completeness check passes**
-- Action: Run `bun run check:i18n` from the repository root.
-- Expected Outcome: Command exits with code 0 confirming all i18n keys in `en.json` have corresponding entries in `fr.json` and all used keys exist.
-- Required Evidence: Terminal output showing successful completion with exit code 0.
+[CHK-04] Existing tests pass.
+- Action: Run `bun run test` from the repository root.
+- Expected Outcome: All existing Vitest unit tests pass with exit code 0.
+- Required Evidence: Terminal output showing test results with all tests passing and exit code 0.
 
-**[CHK-05] Production build succeeds**
+[CHK-05] Production build succeeds.
 - Action: Run `bun run build-local` from the repository root.
-- Expected Outcome: Next.js build completes successfully with exit code 0. The new page route `/[locale]/dashboard/favorite-restaurants` appears in the build output.
-- Required Evidence: Terminal output showing build success and the favorite-restaurants route in the output routes list.
+- Expected Outcome: The Next.js build completes with exit code 0. The build output includes the new route `/(auth)/dashboard/favorite-restaurants` and the new API route `/api/favorite-restaurants`.
+- Required Evidence: Terminal output showing successful build completion and the new routes listed in the build output.
 
-**[CHK-06] Integration tests pass**
-- Action: Run `bun run test:e2e` from the repository root.
-- Expected Outcome: All Playwright tests pass, including the new `FavoriteRestaurant.spec.ts` tests and all existing tests.
-- Required Evidence: Terminal output showing all test suites passed with exit code 0, including the FavoriteRestaurant test file.
+[CHK-06] API routes respond correctly for authenticated and unauthenticated requests.
+- Action: Start the dev server with `bun run dev`. Send HTTP requests to the `/api/favorite-restaurants` endpoint: (1) GET without auth headers, (2) POST with `{ "name": "" }` (empty name) without auth, (3) POST with valid body `{ "name": "Test Restaurant" }` with a valid Clerk session. After adding, (4) GET with the same session to list favorites, (5) DELETE with valid session using the returned id.
+- Expected Outcome: Unauthenticated GET returns 401. Unauthenticated POST returns 401. Authenticated POST with valid body returns 200 with the created favorite. Authenticated GET returns 200 with the favorites array including the added restaurant. Authenticated DELETE returns 200 with the deleted favorite.
+- Required Evidence: HTTP status codes and response JSON payloads for each request.
 
-**[CHK-07] Browser verification of favorites page**
-- Action: Start the dev server with `bun run dev`. Open a browser and navigate to `http://localhost:3000/dashboard/favorite-restaurants/`. If prompted, sign in with Clerk. On the favorites page, enter a restaurant name in the form and submit. Then click the delete button on the added item.
-- Expected Outcome: The favorites page loads within the dashboard layout with the navigation link visible. The add form accepts a restaurant name and adds it to the displayed list. The delete button removes the item from the list. The empty state message displays when no items exist.
-- Required Evidence: Browser screenshot showing (1) the favorites page with the navigation link highlighted, (2) a restaurant added to the list after form submission, and (3) the list after deletion. Console/network evidence confirming no errors during the add and delete operations.
-
-**[CHK-08] Database schema and migration integrity**
-- Action: Inspect `src/models/Schema.ts` for the `favoriteRestaurantsSchema` export. Inspect the `migrations/` directory for a new migration SQL file containing the `CREATE TABLE "favorite_restaurants"` statement with columns `id`, `user_id`, `name`, `updated_at`, `created_at`.
-- Expected Outcome: The schema exports a `favoriteRestaurantsSchema` with all 5 columns. The migration SQL file correctly creates the table.
-- Required Evidence: Contents of the schema export and the migration SQL file showing the correct CREATE TABLE statement.
+[CHK-07] Favorites page renders in browser with full add and remove workflow.
+- Action: Start the dev server with `bun run dev`. Open a browser and navigate to the dashboard. Sign in with Clerk. Click the "Favorite restaurants" navigation link. On the favorites page, observe the empty state. Enter a restaurant name in the form and submit. Verify the restaurant appears in the list. Click the remove button on the added restaurant. Verify the list returns to empty state.
+- Expected Outcome: The dashboard navigation displays a "Favorite restaurants" link. Clicking it loads the favorites page with an empty state message. After submitting the form with a restaurant name, the restaurant appears in a list. After clicking the remove button, the restaurant is removed and the empty state message reappears.
+- Required Evidence: Browser screenshots showing: (1) the dashboard navigation with the "Favorite restaurants" link, (2) the empty state on initial page load, (3) the list after adding a restaurant with the restaurant name visible, (4) the empty state after removing the restaurant. Console/network panel evidence confirming no JavaScript errors during the add and remove operations.
 
 ## Success Metrics
 
-1. All 8 required checks pass.
-2. A new `favorite_restaurants` database table exists with user-scoping via Clerk user ID.
-3. API routes support adding (POST), listing (GET), and removing (DELETE) favorite restaurants for the authenticated user.
-4. A new authenticated page at `/dashboard/favorite-restaurants/` displays the user's favorites with add and remove functionality.
-5. Dashboard navigation includes a link to the favorites page.
-6. i18n strings are present in both `en.json` and `fr.json`.
-7. Integration tests cover API validation and/or auth boundary.
-8. All pre-existing tests and quality gates continue to pass.
+1. All quality gates pass (lint, type-check, dep-check, i18n-check).
+2. Production build completes successfully.
+3. A new `favorite_restaurant` database table is defined with user-scoping via Clerk user ID.
+4. A migration file is generated with correct DDL.
+5. API routes enforce authentication and support GET, POST, DELETE.
+6. The favorites page is accessible from a dashboard navigation link.
+7. Add and remove operations work through the browser UI.
+8. i18n strings are complete in both en and fr locales.
+9. No existing tests are broken.
 
 ## Artifact Inputs Used
 
 | Artifact | Why Used | Key Takeaway |
 |----------|----------|--------------|
-| `ticket.md` | Define scope | "Changeable list of my favorite restaurants" — add/view/remove |
-| `scout/scout-summary.md` | Codebase analysis | No restaurant concept exists; counter is the reference pattern; stack confirmed |
-| `scout/reference-map.json` | File mapping and patterns | 24 relevant files identified; wildcard schema import auto-discovers new exports |
-| `diagnosis/diagnosis-statement.md` | Design decisions | Greenfield feature; favoriteRestaurantsSchema with userId text column; 3 API methods |
-| `diagnosis/apl.json` | Structured findings | Minimal CRUD (add/view/remove); user-scoping via Clerk; dashboard placement |
-| `product/product.md` | Product scope and constraints | MVP: add/view/remove only; duplicates allowed; no edit/rich data/pagination |
-| `tech-research/tech-research.md` | Architecture and API design | Option A (API routes + client fetch) chosen; auth() over currentUser(); single route file; Zod validation patterns |
-| `tech-research/apl.json` | Technical decisions | Confirmed all patterns; no new dependencies; router.refresh() for updates |
-| `repo-guidance.json` | Repo intent | Single repo (next-js-boilerplate) is the target |
-| `src/models/Schema.ts` | Schema pattern | counterSchema: serial PK, timestamps with $onUpdate, defaultNow |
-| `src/app/[locale]/api/counter/route.ts` | API pattern | Zod safeParse, treeifyError for 422, Drizzle insert with returning |
-| `src/validations/CounterValidation.ts` | Validation pattern | z.object() with named export |
-| `src/components/CounterForm.tsx` | Client form pattern | 'use client', zodResolver, useForm, fetch to API, router.refresh() |
-| `src/components/CurrentCount.tsx` | Server component pattern | db.query, getTranslations, headers |
-| `src/components/Hello.tsx` | User identity pattern | currentUser() from Clerk; shows user.id access |
-| `src/app/[locale]/(auth)/dashboard/layout.tsx` | Navigation pattern | BaseTemplate leftNav with Link components; 3 existing links |
-| `src/app/[locale]/(auth)/dashboard/page.tsx` | Page pattern | Locale params, setRequestLocale, generateMetadata |
-| `src/locales/en.json` | i18n structure | Namespace-based keys; DashboardLayout, CounterForm, CurrentCount namespaces |
-| `src/locales/fr.json` | French translations | Mirror structure of en.json |
-| `tests/integration/Counter.spec.ts` | Test pattern | Playwright page.request, status assertions, JSON assertions |
-| `playwright.config.ts` | Test infrastructure | Port 3008, webServer auto-start, PGlite in-memory |
-| `package.json` | Scripts and deps | All needed libs present; quality gate commands confirmed |
-| `AGENTS.md` | Coding standards | Named exports, @/ imports, Tailwind v4, no useMemo/useCallback, sentence case i18n |
+| `ticket.md` | Define feature scope | "Have a changeable list of my favorite restaurants" — add/view/remove |
+| `scout/reference-map.json` | Map codebase files, patterns, and gaps | Counter feature is the reference vertical slice; no restaurant concept exists; 23 files identified |
+| `scout/scout-summary.md` | Cross-reference analysis and quality gates | Stack confirmed: Next.js 16, Drizzle 0.45.1, Clerk 7.0.6, next-intl, Tailwind v4 |
+| `diagnosis/diagnosis-statement.md` | Root-cause analysis and design decisions | Greenfield feature; favoriteRestaurantSchema with userId text column; 3 API methods; 8 success criteria |
+| `diagnosis/apl.json` | Structured diagnosis findings | Confirmed greenfield; minimal CRUD scope (add/view/remove); user-scoping via Clerk |
+| `product/product.md` | Product requirements and scope boundaries | MVP: add/view/remove; duplicates allowed; no edit, no rich data, no pagination, no reordering |
+| `tech-research/tech-research.md` | Architecture decisions and API design | Option A (API routes + client fetch) chosen; auth() over currentUser(); 3 components; single route file; no new deps |
+| `tech-research/apl.json` | Validated technical questions | Drizzle text column for userId; Zod patterns; router.refresh() for updates |
+| `repo-guidance.json` | Repo intent classification | Single target repo: next-js-boilerplate |
+| `src/models/Schema.ts` | Verify schema column pattern | counterSchema: serial PK, integer, timestamps with mode:'date', $onUpdate, defaultNow, notNull |
+| `src/app/[locale]/api/counter/route.ts` | Verify API route pattern | Zod safeParse, z.treeifyError for 422, Drizzle insert with returning, NextResponse.json |
+| `src/validations/CounterValidation.ts` | Verify validation pattern | `import * as z from 'zod'`; z.object() with field constraints; named export |
+| `src/components/CounterForm.tsx` | Verify client form pattern | 'use client', zodResolver, useForm, fetch to API, router.refresh(), useTranslations |
+| `src/components/CurrentCount.tsx` | Verify server component pattern | Async server component, db.query, getTranslations, eq from drizzle-orm |
+| `src/components/Hello.tsx` | Verify user identity access | currentUser() from @clerk/nextjs/server for full user object |
+| `src/app/[locale]/(auth)/dashboard/layout.tsx` | Verify navigation structure | BaseTemplate leftNav with 2 Link items; add third link after user_profile_link |
+| `src/app/[locale]/(auth)/dashboard/page.tsx` | Verify page pattern | DashboardPageProps type, generateMetadata with namespace, setRequestLocale, default export |
+| `src/locales/en.json` | Verify i18n namespace structure | Namespace-based keys per component/page; DashboardLayout has dashboard_link, user_profile_link, sign_out |
+| `src/locales/fr.json` | Verify French translation structure | Mirror structure of en.json with French translations |
+| `AGENTS.md` | Mandatory coding standards | Named exports, @/ imports, Tailwind v4, no useMemo/useCallback, sentence case i18n, JSDoc, conventional commits |
+| `package.json` | Scripts and dependencies | All needed libs present; quality gate commands: lint, check:types, check:deps, check:i18n, build-local, test |
+| `drizzle.config.ts` | Migration config | Schema at ./src/models/Schema.ts, output at ./migrations, PostgreSQL dialect |
+| `tests/integration/Counter.spec.ts` | Integration test pattern | Playwright page.request, status assertions, JSON assertions; counter tests are unauthenticated |
