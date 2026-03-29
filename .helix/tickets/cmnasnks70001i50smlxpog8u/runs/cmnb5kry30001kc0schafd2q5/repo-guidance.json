@@ -3,7 +3,7 @@
     {
       "repoKey": "next-js-boilerplate",
       "intent": "target",
-      "rationale": "Single repository in scope. All changes (schema, migration, API routes, validation, UI components, i18n, tests, navigation) are implemented here. The codebase contains the full stack: Drizzle ORM schema, Next.js API routes, React components, next-intl i18n, and Playwright tests."
+      "rationale": "Single repository in scope. All changes required for the favorite restaurants feature — Drizzle schema table, migration, API routes, Zod validation, client/server UI components, dashboard page, navigation link, and i18n strings — are implemented in this repository. The codebase contains the full Next.js stack with established patterns from the counter feature."
     }
   ],
   "updatedBy": "diagnosis"

@@ -1,7 +1,7 @@
 {
   "questions": [
     "Q1: Does any restaurant, favorite, or user-scoped list concept exist in the codebase?",
-    "Q2: What established patterns exist for adding a new data-backed feature (schema, API, validation, UI, i18n, tests)?",
+    "Q2: What established patterns exist for adding a new data-backed feature (schema, API, validation, UI, i18n)?",
     "Q3: How is user identity resolved and how can data be scoped per-user?",
     "Q4: What does 'changeable list' minimally require in terms of CRUD operations?",
     "Q5: Where should a user-specific feature live in the route/page hierarchy?"
@@ -11,23 +11,22 @@
       "answer": "No restaurant, favorite, or user-scoped list concept exists anywhere in the codebase. The only DB table is 'counter' with columns id, count, updated_at, created_at. No user-scoping column exists on any table.",
       "evidence": [
         "src/models/Schema.ts: only exports counterSchema with 4 columns (lines 16-24)",
-        "migrations/0000_init-db.sql: single CREATE TABLE counter",
-        "scout/reference-map.json facts[0]: 'No restaurant, favorite, or list concept exists anywhere in the codebase.'"
+        "migrations/ contains only 0000_init-db.sql (single CREATE TABLE counter)",
+        "scout/reference-map.json facts[0]: 'No restaurant, favorite, or list-management code exists anywhere in the codebase.'"
       ]
     },
     {
-      "answer": "The counter feature provides a complete vertical-slice reference pattern: Drizzle schema (src/models/Schema.ts), API route with Zod validation (src/app/[locale]/api/counter/route.ts + src/validations/CounterValidation.ts), client form component with react-hook-form (src/components/CounterForm.tsx), server display component with db.query (src/components/CurrentCount.tsx), i18n strings in en.json and fr.json, and Playwright integration tests (tests/integration/Counter.spec.ts). The DB connection uses wildcard schema import so new exports are auto-available.",
+      "answer": "The counter feature provides a complete vertical-slice reference pattern: Drizzle schema (src/models/Schema.ts), API route with Zod validation (src/app/[locale]/api/counter/route.ts + src/validations/CounterValidation.ts), client form component with react-hook-form (src/components/CounterForm.tsx), server display component with db.query (src/components/CurrentCount.tsx), i18n strings in en.json and fr.json. The DB connection uses wildcard schema import so new exports are auto-available.",
       "evidence": [
-        "src/utils/DBConnection.ts line 5: import * as schema from '@/models/Schema'",
-        "src/app/[locale]/api/counter/route.ts: PUT handler with Zod safeParse, Drizzle insert/upsert, NextResponse.json",
+        "src/utils/DBConnection.ts: import * as schema from '@/models/Schema'",
+        "src/app/[locale]/api/counter/route.ts: PUT handler with Zod safeParse, Drizzle insert/upsert, NextResponse.json, status 422 for validation errors",
         "src/validations/CounterValidation.ts: z.object({ increment: z.number().min(1).max(3) })",
         "src/components/CounterForm.tsx: 'use client', zodResolver, useForm, fetch to /api/counter, router.refresh()",
-        "src/components/CurrentCount.tsx: server component with db.query.counterSchema.findFirst",
-        "tests/integration/Counter.spec.ts: Playwright API tests with status/JSON assertions"
+        "src/components/CurrentCount.tsx: server component with db.query.counterSchema.findFirst, getTranslations"
       ]
     },
     {
-      "answer": "Clerk auth (v7.0.6) provides user identity. Server-side: currentUser() from '@clerk/nextjs/server' returns the authenticated user object including primaryEmailAddress. The (auth) route group wraps pages in ClerkProvider. The user's Clerk ID (user.id string) can serve as the user-scoping column for a favorites table.",
+      "answer": "Clerk auth (v7.0.6) provides user identity. Server-side: currentUser() from '@clerk/nextjs/server' returns the authenticated user object. The (auth) route group wraps pages in ClerkProvider. The user's Clerk ID (user.id, a string) can serve as the user-scoping column for a favorites table.",
       "evidence": [
         "src/components/Hello.tsx line 1: import { currentUser } from '@clerk/nextjs/server'",
         "src/components/Hello.tsx line 7: const user = await currentUser()",
@@ -35,22 +34,22 @@
       ]
     },
     {
-      "answer": "A 'changeable list' minimally requires: add items, remove items, and view the list. The ticket says 'changeable' and 'my favorite restaurants', which implies per-user add/remove/view. Full edit (update) of individual entries is a reasonable interpretation but not explicitly required. Reordering is not implied. Given the ticket's simplicity, the minimal interpretation is: add a restaurant by name, view the list, remove a restaurant from the list.",
+      "answer": "A 'changeable list' minimally requires: add items, remove items, and view the list. Given the ticket says 'changeable' and 'my favorite restaurants', the minimal interpretation is: add a restaurant by name, view the list, remove a restaurant. An edit/update capability is a reasonable extension. Reordering is not implied. Keep fields minimal (restaurant name only) since the ticket provides no structured data specification.",
       "evidence": [
         "Ticket title: 'Have a changeable list of my favorite restaurants'",
         "Ticket description repeats the title with no additional specifications",
-        "No attachments or wireframes provided"
+        "No attachments, wireframes, or field specifications provided"
       ]
     },
     {
-      "answer": "The (auth) route group at src/app/[locale]/(auth)/ is the correct location. The dashboard layout (src/app/[locale]/(auth)/dashboard/layout.tsx) already has navigation links and uses BaseTemplate. A new page under the dashboard route group (e.g., src/app/[locale]/(auth)/dashboard/favorite-restaurants/page.tsx) with a corresponding nav link is the natural home. The API route should be under src/app/[locale]/api/favorite-restaurants/.",
+      "answer": "The (auth) route group at src/app/[locale]/(auth)/ is the correct location. A new page under dashboard (e.g., src/app/[locale]/(auth)/dashboard/favorite-restaurants/page.tsx) with a corresponding nav link is the natural home. The API route should be under src/app/[locale]/api/favorite-restaurants/.",
       "evidence": [
         "src/app/[locale]/(auth)/dashboard/layout.tsx: navigation with dashboard_link, user_profile_link (lines 22-37)",
         "src/app/[locale]/(auth)/dashboard/page.tsx: existing dashboard page behind auth",
-        "src/app/[locale]/api/counter/route.ts: existing API route pattern under api/"
+        "src/app/[locale]/api/counter/route.ts: existing API route under api/"
       ]
     }
   ],
-  "statement": "This is a greenfield feature addition, not a bug fix. No restaurant or favorites concept exists in the codebase. The root cause of the gap is simply that the feature has never been built. Implementation requires a new Drizzle schema table for favorite restaurants (user-scoped via Clerk user ID), new API route(s) for CRUD operations, Zod validation, client/server UI components, i18n strings, and integration tests. All of these follow well-established patterns already present in the counter feature. The simplest correct implementation is a per-user list with add, view, and remove operations, where each entry has at minimum a name field. The feature should live in the authenticated dashboard area with a navigation entry.",
+  "statement": "This is a greenfield feature addition, not a bug fix. No restaurant or favorites concept exists in the codebase. Implementation requires a new Drizzle schema table for favorite restaurants (user-scoped via Clerk user ID text column), new API route(s) for add/list/remove operations, Zod validation, client form and server list UI components, a new dashboard sub-page with navigation link, i18n strings in both locales, and a database migration. All follow well-established patterns from the counter feature vertical slice. The simplest correct implementation is a per-user list with add, view, and remove operations with each entry having a name field.",
   "followups": []
 }
