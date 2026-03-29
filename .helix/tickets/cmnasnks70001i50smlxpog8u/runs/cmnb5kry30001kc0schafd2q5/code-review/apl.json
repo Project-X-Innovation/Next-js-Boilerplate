@@ -1,0 +1,49 @@
+{
+  "questions": [
+    "Does the implementation correctly fulfill all ticket requirements (add, view, remove favorite restaurants)?",
+    "Are there any regressions or issues in shared code files (Schema.ts, locale files, dashboard layout)?",
+    "Does the code follow the established codebase patterns (counter feature vertical slice) and AGENTS.md standards?",
+    "Are the French translations accurate?"
+  ],
+  "answers": [
+    {
+      "answer": "Yes. All three operations (add, view, remove) are implemented: POST API + FavoriteRestaurantForm for add, GET API + FavoriteRestaurantList server component for view, DELETE API + RemoveFavoriteButton for remove. User-scoping via Clerk auth() is enforced on all operations. Dashboard navigation link provides access. i18n strings present in both locales.",
+      "evidence": [
+        "src/app/[locale]/api/favorite-restaurants/route.ts exports GET, POST, DELETE with auth checks and userId scoping",
+        "src/components/FavoriteRestaurantForm.tsx provides add form with react-hook-form + Zod validation",
+        "src/components/FavoriteRestaurantList.tsx renders user-scoped list with empty state",
+        "src/components/RemoveFavoriteButton.tsx provides per-item delete action",
+        "src/app/[locale]/(auth)/dashboard/layout.tsx has new nav link to favorites page"
+      ]
+    },
+    {
+      "answer": "No regressions found. All changes to shared files are additive: Schema.ts adds a new export without modifying counterSchema, locale files add new keys without modifying existing ones, and the dashboard layout adds a new nav item after existing ones. Confirmed by check:i18n, check:deps, lint, check:types, and build-local all passing clean.",
+      "evidence": [
+        "src/models/Schema.ts: favoriteRestaurantSchema added at line 26; counterSchema at lines 16-24 unchanged",
+        "src/locales/en.json: new namespaces added after existing ones; existing keys unchanged",
+        "npm run check:i18n: 'No missing keys found! No unused keys found!'",
+        "npm run lint: 0 warnings, 0 errors",
+        "npm run check:types: clean",
+        "npm run build-local: exit 0"
+      ]
+    },
+    {
+      "answer": "Yes. The implementation closely follows the counter feature vertical-slice pattern: Drizzle schema definition, Zod validation with named exports, API route with safeParse + treeifyError, client form with react-hook-form + zodResolver + fetch + router.refresh(), async server component with getTranslations + db query, dashboard page with generateMetadata + setRequestLocale. Named exports used throughout (except Next.js page default export). Absolute imports via @/. Tailwind v4 classes. Sentence-case i18n. JSDoc on all exports.",
+      "evidence": [
+        "FavoriteRestaurantForm.tsx follows CounterForm.tsx pattern exactly",
+        "FavoriteRestaurantList.tsx follows CurrentCount.tsx server component pattern",
+        "FavoriteRestaurantValidation.ts follows CounterValidation.ts pattern",
+        "API route follows counter/route.ts pattern with auth enforcement added"
+      ]
+    },
+    {
+      "answer": "One error found and fixed. In fr.json, FavoriteRestaurantForm.presentation had 'a votre' (using verb 'avoir') instead of the correct preposition 'a votre' with grave accent. Fixed during code review. All other French translations are accurate.",
+      "evidence": [
+        "fr.json line 83: changed 'Ajoutez un restaurant a votre liste de favoris.' to 'Ajoutez un restaurant a votre liste de favoris.'",
+        "npm run check:i18n passes after fix"
+      ]
+    }
+  ],
+  "statement": "Code review of the favorite restaurants feature is complete. Reviewed all 11 changed files against ticket requirements, product spec, implementation plan, and coding standards. Found and fixed one French translation error (missing accent on preposition). All quality gates pass after fix (lint, types, deps, i18n, build). No regressions, no missed requirements, no behavioral issues. All verification checks remain valid.",
+  "followups": []
+}

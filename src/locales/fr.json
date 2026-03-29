@@ -79,7 +79,7 @@
     "meta_title": "Restaurants favoris"
   },
   "FavoriteRestaurantForm": {
-    "presentation": "Ajoutez un restaurant a votre liste de favoris.",
+    "presentation": "Ajoutez un restaurant à votre liste de favoris.",
     "label_name": "Nom du restaurant",
     "button_add": "Ajouter",
     "error_name_required": "Le nom est requis"
