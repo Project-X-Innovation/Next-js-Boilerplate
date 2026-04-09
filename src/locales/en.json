@@ -72,7 +72,24 @@
   "DashboardLayout": {
     "dashboard_link": "Dashboard",
     "user_profile_link": "Manage your account",
+    "favorite_restaurants_link": "Favorite restaurants",
     "sign_out": "Sign out"
+  },
+  "FavoriteRestaurantsPage": {
+    "meta_title": "Favorite restaurants"
+  },
+  "FavoriteRestaurantForm": {
+    "presentation": "Add a restaurant to your favorites list.",
+    "label_name": "Restaurant name",
+    "button_add": "Add",
+    "error_name_required": "Name is required"
+  },
+  "FavoriteRestaurantList": {
+    "title": "My favorite restaurants",
+    "empty_state": "No favorite restaurants yet"
+  },
+  "RemoveFavoriteButton": {
+    "button_remove": "Remove"
   },
   "LocaleSwitcher": {
     "change_language": "Change language"

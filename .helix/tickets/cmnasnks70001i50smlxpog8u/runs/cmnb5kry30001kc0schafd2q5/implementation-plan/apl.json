@@ -1,0 +1,54 @@
+{
+  "questions": [
+    "Q1: What is the correct sequence of implementation steps for the favorite restaurants feature?",
+    "Q2: What files need to be created or modified, and what are their dependencies?",
+    "Q3: What verification commands can an automated agent run to validate each step?",
+    "Q4: What are the critical safety invariants (auth, user-scoping) that must hold across all steps?",
+    "Q5: What component architecture correctly handles the server/client boundary for list display and interactive actions?"
+  ],
+  "answers": [
+    {
+      "answer": "The implementation follows a bottom-up sequence: (1) schema, (2) migration, (3) validation, (4) i18n strings, (5) API route, (6) RemoveFavoriteButton client component, (7) FavoriteRestaurantForm client component, (8) FavoriteRestaurantList server component, (9) page, (10) navigation link. Each step depends on outputs of prior steps: API route needs schema + validation; server component needs schema + RemoveFavoriteButton; page needs form + list components.",
+      "evidence": [
+        "src/models/Schema.ts: schema must exist before migration generation",
+        "src/validations/CounterValidation.ts: validation imported by API route",
+        "src/app/[locale]/api/counter/route.ts: API route imports schema + validation",
+        "src/components/CounterForm.tsx: client component fetches API route",
+        "src/components/CurrentCount.tsx: server component reads DB directly and renders client children"
+      ]
+    },
+    {
+      "answer": "New files (6): src/validations/FavoriteRestaurantValidation.ts, src/app/[locale]/api/favorite-restaurants/route.ts, src/components/RemoveFavoriteButton.tsx, src/components/FavoriteRestaurantForm.tsx, src/components/FavoriteRestaurantList.tsx, src/app/[locale]/(auth)/dashboard/favorite-restaurants/page.tsx, plus a generated migration file. Modified files (3): src/models/Schema.ts (add table export), src/app/[locale]/(auth)/dashboard/layout.tsx (add nav link), src/locales/en.json and src/locales/fr.json (add i18n keys).",
+      "evidence": [
+        "tech-research/tech-research.md: 3-component architecture with specific file paths",
+        "diagnosis/diagnosis-statement.md: lists all required layers",
+        "product/product.md: MVP scope confirms add/view/remove only"
+      ]
+    },
+    {
+      "answer": "Quality gates are the primary automated verification: bun run lint, bun run check:types, bun run check:deps, bun run check:i18n, bun run build-local, bun run test. These are all configured and runnable. Browser verification requires the dev server with Clerk credentials. Integration tests for the auth boundary (401 for unauthenticated requests) can be run via bun run test:e2e.",
+      "evidence": [
+        "package.json: lint, check:types, check:deps, check:i18n, build-local, test scripts",
+        "tests/integration/Counter.spec.ts: Playwright page.request for API testing pattern"
+      ]
+    },
+    {
+      "answer": "Every API handler must: (1) call auth() from @clerk/nextjs/server, (2) check userId exists and return 401 if not, (3) scope all DB queries to that userId. The DELETE handler must use compound WHERE with both id AND userId to prevent cross-user deletion. The server component (FavoriteRestaurantList) must also scope its DB query to the authenticated user.",
+      "evidence": [
+        "tech-research/tech-research.md: 'DELETE must use compound WHERE: and(eq(schema.id, id), eq(schema.userId, userId))'",
+        "tech-research/tech-research.md Risk #1: 'Auth check omission allows cross-user data access'",
+        "diagnosis/diagnosis-statement.md: 'API routes must verify the user is authenticated and scope all queries to userId'"
+      ]
+    },
+    {
+      "answer": "Three components with clear server/client boundaries: FavoriteRestaurantList (server) reads DB and renders the list with embedded RemoveFavoriteButton (client) per item; FavoriteRestaurantForm (client) handles the add form with react-hook-form. The server component passes only id to the client delete button, minimizing RSC boundary serialization. This mirrors the CounterForm (client) + CurrentCount (server) split.",
+      "evidence": [
+        "tech-research/tech-research.md: 'Three focused components with clear server/client boundaries'",
+        "src/components/CounterForm.tsx: client component with 'use client', form, fetch, refresh",
+        "src/components/CurrentCount.tsx: server component with db.query, no interactivity"
+      ]
+    }
+  ],
+  "statement": "The implementation plan defines 10 atomic, sequenced steps to build a user-scoped favorite restaurants feature following the existing counter vertical-slice pattern. Steps proceed bottom-up: schema, migration, validation, i18n, API route, three UI components (RemoveFavoriteButton, FavoriteRestaurantForm, FavoriteRestaurantList), page, and navigation link. Seven required verification checks cover quality gates, migration integrity, schema correctness, existing tests, production build, API behavior, and browser verification. All patterns mirror existing code. No new dependencies are needed.",
+  "followups": []
+}
