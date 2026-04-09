@@ -1,0 +1,132 @@
+{
+  "problem": "The application needs a changeable list of favorite restaurants. No restaurant, favorite, or list-management concept exists in the codebase today. The only data feature is a demo counter with a single DB table. A new domain feature is required: database schema, API routes, Zod validation, client/server UI components, i18n strings in both locales, and a database migration, all following the established counter-feature pattern.",
+  "files": [
+    {
+      "path": "src/models/Schema.ts",
+      "why": "Central Drizzle ORM schema file. Currently defines only `counterSchema` (pgTable with serial PK, integer count, timestamps). New restaurant/favorites table(s) must be added here. Referenced by drizzle.config.ts as the single schema source."
+    },
+    {
+      "path": "drizzle.config.ts",
+      "why": "Drizzle Kit config pointing to src/models/Schema.ts for schema and ./migrations for output. After schema changes, `npm run db:generate` produces a new migration SQL file."
+    },
+    {
+      "path": "migrations/0000_init-db.sql",
+      "why": "Existing migration creating the counter table. New migration(s) will be auto-generated alongside this by drizzle-kit."
+    },
+    {
+      "path": "src/utils/DBConnection.ts",
+      "why": "Creates Drizzle DB connection with `import * as schema from '@/models/Schema'`. Wildcard import means new schema exports from Schema.ts are automatically available without changes here."
+    },
+    {
+      "path": "src/libs/DB.ts",
+      "why": "Global cached Drizzle singleton instance. Import point for all data access in API routes and server components. No changes needed."
+    },
+    {
+      "path": "src/app/[locale]/api/counter/route.ts",
+      "why": "Reference API route pattern: Zod safeParse validation, Drizzle insert with onConflictDoUpdate, NextResponse.json, logger usage, x-e2e-random-id header for test isolation. New restaurant API routes should follow this structure."
+    },
+    {
+      "path": "src/validations/CounterValidation.ts",
+      "why": "Reference Zod validation pattern (z.object with field constraints). New restaurant validation schema should follow this in src/validations/."
+    },
+    {
+      "path": "src/components/CounterForm.tsx",
+      "why": "Reference client component pattern: 'use client' directive, react-hook-form with zodResolver, useTranslations for i18n, fetch() to API route, router.refresh() for server data revalidation."
+    },
+    {
+      "path": "src/components/CurrentCount.tsx",
+      "why": "Reference async server component pattern: direct db.query usage with drizzle-orm eq(), getTranslations for i18n, headers() for request context."
+    },
+    {
+      "path": "src/components/Hello.tsx",
+      "why": "Shows how to access authenticated user identity via `currentUser()` from '@clerk/nextjs/server'. Essential pattern for user-scoped data."
+    },
+    {
+      "path": "src/app/[locale]/(auth)/dashboard/page.tsx",
+      "why": "Dashboard page pattern: DashboardPageProps type, generateMetadata with locale, setRequestLocale, default export. Favorites page likely belongs as a sibling under (auth)/dashboard/."
+    },
+    {
+      "path": "src/app/[locale]/(auth)/dashboard/layout.tsx",
+      "why": "Dashboard layout with navigation links rendered via BaseTemplate leftNav/rightNav. A new favorites page needs a nav link entry added here."
+    },
+    {
+      "path": "src/app/[locale]/(auth)/layout.tsx",
+      "why": "Auth layout wrapping ClerkProvider. All pages in the (auth) route group are behind Clerk authentication, providing user identity."
+    },
+    {
+      "path": "src/locales/en.json",
+      "why": "English i18n strings organized by namespace (component/page name). New namespace and keys needed for all restaurant feature UI text."
+    },
+    {
+      "path": "src/locales/fr.json",
+      "why": "French i18n strings. Must receive corresponding translations for every new key added to en.json. check:i18n script validates completeness."
+    },
+    {
+      "path": "src/libs/Env.ts",
+      "why": "Type-safe env validation with @t3-oss/env-nextjs. DATABASE_URL and CLERK_SECRET_KEY already validated. No new env vars expected for this feature."
+    },
+    {
+      "path": "src/utils/AppConfig.ts",
+      "why": "App configuration with locale list (en, fr) and prefix strategy. No changes expected but defines i18n boundaries."
+    },
+    {
+      "path": "src/templates/BaseTemplate.tsx",
+      "why": "Shared layout template with leftNav/rightNav prop slots. Dashboard layout passes navigation links through this."
+    },
+    {
+      "path": "src/libs/I18nNavigation.ts",
+      "why": "Exports locale-aware Link, usePathname, useRouter from next-intl. Used by client components for navigation."
+    },
+    {
+      "path": "src/app/[locale]/(marketing)/counter/page.tsx",
+      "why": "Reference page composition: imports server + client components, generateMetadata with locale namespace, useTranslations for page-level content."
+    },
+    {
+      "path": "package.json",
+      "why": "Scripts and quality gates: lint, check:types, check:deps, check:i18n, test, test:e2e, build-local, db:generate, db:migrate."
+    },
+    {
+      "path": "lefthook.yml",
+      "why": "Pre-commit hooks: ultracite lint/fix and knip dependency check. Commit-msg hook runs commitlint for conventional commits."
+    },
+    {
+      "path": "AGENTS.md",
+      "why": "Mandatory coding standards: named exports only, absolute imports via @/, Zod type-only imports, no useMemo/useCallback, Tailwind v4, conventional commits, test naming, JSDoc requirements."
+    }
+  ],
+  "facts": [
+    "No restaurant, favorite, or list-management code exists anywhere in the codebase.",
+    "The only existing DB table is 'counter' with columns: id (serial PK), count (integer default 0), updated_at (timestamp), created_at (timestamp).",
+    "Drizzle ORM v0.45.1 with PostgreSQL dialect is the database layer; schema defined in src/models/Schema.ts using pgTable().",
+    "DBConnection.ts uses `import * as schema from '@/models/Schema'` so new schema exports are auto-available without code changes.",
+    "Database migrations are generated via `npm run db:generate` (drizzle-kit generate) and applied via `npm run db:migrate`.",
+    "Authentication is handled by Clerk v7.0.6. The (auth) route group wraps pages in ClerkProvider.",
+    "User identity is accessible server-side via `currentUser()` from '@clerk/nextjs/server' (used in src/components/Hello.tsx).",
+    "The counter feature demonstrates the complete vertical slice: Schema.ts -> CounterValidation.ts -> api/counter/route.ts -> CounterForm.tsx (client) + CurrentCount.tsx (server).",
+    "API routes return NextResponse.json(); Zod validation errors return status 422 with z.treeifyError().",
+    "The counter API route uses an upsert pattern (insert + onConflictDoUpdate) with .returning().",
+    "Server components read data directly via db.query (e.g., db.query.counterSchema.findFirst()).",
+    "Client components use 'use client' directive, react-hook-form with zodResolver, and fetch() to API routes.",
+    "After API mutations, client components call router.refresh() to trigger server component revalidation.",
+    "i18n uses next-intl with two locales: 'en' and 'fr'. Server: getTranslations(); Client: useTranslations(). All user-visible strings must be in both locale files.",
+    "Styling uses Tailwind CSS v4 utility classes on plain HTML elements. No component library (shadcn, Radix, MUI, etc.).",
+    "AGENTS.md mandates: named exports only (except Next.js pages), absolute imports via @/, no useMemo/useCallback, Zod type-only imports, conventional commits.",
+    "Quality gates: ultracite lint (type-aware), TypeScript strict mode (noUncheckedIndexedAccess, noImplicitReturns), vitest unit tests, Playwright E2E, knip unused deps, check:i18n for locale completeness.",
+    "Pre-commit hooks via lefthook: commitlint for commit messages, ultracite fix for lint/format, knip for unused deps.",
+    "The counter feature is in the (marketing) route group (public). A user-specific favorites feature should be in the (auth) route group (protected).",
+    "Next.js 16.2.1 with React 19.2.4 and React Compiler enabled in production.",
+    "The dashboard layout renders navigation via BaseTemplate with leftNav/rightNav props (currently: Dashboard, User Profile links).",
+    "No existing user-scoped data pattern in the DB (counter is global, not tied to a user ID)."
+  ],
+  "unknowns": [
+    "Whether 'changeable list' implies full CRUD (create, read, update, delete) or a simpler add/remove pattern.",
+    "Whether the favorite restaurants list should be user-scoped (per authenticated Clerk user) or global. 'My favorite restaurants' strongly implies per-user, but is not confirmed.",
+    "What data fields a restaurant entry should have (name only, or also address, cuisine type, rating, notes, URL, etc.).",
+    "Whether restaurants should be free-form entries the user creates, or selections from a predefined catalog.",
+    "Whether list ordering/reordering is part of the 'changeable' requirement.",
+    "Whether the feature needs its own dedicated dashboard sub-page or should be embedded in the existing dashboard page.",
+    "How Clerk user IDs should be stored in the DB schema (text column, varchar, etc.) since no user-scoping pattern exists to reference.",
+    "What the French translations should be for new i18n keys.",
+    "Whether there are constraints on the number of favorites a user can have."
+  ]
+}

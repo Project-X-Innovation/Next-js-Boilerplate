@@ -72,7 +72,24 @@
   "DashboardLayout": {
     "dashboard_link": "Tableau de bord",
     "user_profile_link": "Gérer votre compte",
+    "favorite_restaurants_link": "Restaurants favoris",
     "sign_out": "Se déconnecter"
+  },
+  "FavoriteRestaurantsPage": {
+    "meta_title": "Restaurants favoris"
+  },
+  "FavoriteRestaurantForm": {
+    "presentation": "Ajoutez un restaurant à votre liste de favoris.",
+    "label_name": "Nom du restaurant",
+    "button_add": "Ajouter",
+    "error_name_required": "Le nom est requis"
+  },
+  "FavoriteRestaurantList": {
+    "title": "Mes restaurants favoris",
+    "empty_state": "Aucun restaurant favori"
+  },
+  "RemoveFavoriteButton": {
+    "button_remove": "Supprimer"
   },
   "LocaleSwitcher": {
     "change_language": "Changer de langue"

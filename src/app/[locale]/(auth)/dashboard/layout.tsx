@@ -35,6 +35,14 @@ export default async function DashboardLayout(props: {
               {t('user_profile_link')}
             </Link>
           </li>
+          <li>
+            <Link
+              href="/dashboard/favorite-restaurants/"
+              className="border-none text-gray-700 hover:text-gray-900"
+            >
+              {t('favorite_restaurants_link')}
+            </Link>
+          </li>
         </>
       }
       rightNav={

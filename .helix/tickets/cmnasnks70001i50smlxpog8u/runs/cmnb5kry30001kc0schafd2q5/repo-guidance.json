@@ -1,0 +1,10 @@
+{
+  "repos": [
+    {
+      "repoKey": "next-js-boilerplate",
+      "intent": "target",
+      "rationale": "Single repository in scope. All changes required for the favorite restaurants feature — Drizzle schema table, migration, API routes, Zod validation, client/server UI components, dashboard page, navigation link, and i18n strings — are implemented in this repository. The codebase contains the full Next.js stack with established patterns from the counter feature."
+    }
+  ],
+  "updatedBy": "diagnosis"
+}

@@ -1,0 +1,10 @@
+{
+  "repos": [
+    {
+      "repoKey": "next-js-boilerplate",
+      "intent": "target",
+      "rationale": "Single repository in scope. All changes (schema, migration, API routes, validation, UI components, i18n, tests, navigation) are implemented here. The codebase contains the full stack: Drizzle ORM schema, Next.js API routes, React components, next-intl i18n, and Playwright tests."
+    }
+  ],
+  "updatedBy": "diagnosis"
+}
