@@ -1,0 +1,50 @@
+{
+  "questions": [
+    "Do the files referenced in the ticket (src/services/user-service.ts, src/controllers/user-controller.ts) exist in the repository?",
+    "Does a User schema or model exist anywhere in the codebase?",
+    "What is the existing API route pattern in the repository, and does the ticket's service/controller pattern align with it?",
+    "Is TypeScript strictNullChecks enabled, making the described null-handling type error a real compile-time concern?",
+    "What existing patterns should new User-related code follow (auth, DB access, validation, error responses)?"
+  ],
+  "answers": [
+    {
+      "answer": "Neither file exists. The src/services/ and src/controllers/ directories do not exist in the repository. Glob searches for both directories returned no results.",
+      "evidence": [
+        "Glob pattern src/services/**/* returned no files",
+        "Glob pattern src/controllers/**/* returned no files",
+        "scout/reference-map.json confirms: 'src/services/user-service.ts does not exist; src/services/ directory does not exist' and 'src/controllers/user-controller.ts does not exist; src/controllers/ directory does not exist'"
+      ]
+    },
+    {
+      "answer": "No User schema or model exists. src/models/Schema.ts defines only counterSchema and favoriteRestaurantSchema. Grep for 'User' across src/ found only Clerk auth references (currentUser, UserProfile) and i18n locale strings — no local User type definition or DB table.",
+      "evidence": [
+        "src/models/Schema.ts lines 16-35: only counterSchema and favoriteRestaurantSchema defined",
+        "Grep for 'User' in src/ returned only Clerk imports (currentUser from @clerk/nextjs/server), UserProfile component, and locale strings — no local User model"
+      ]
+    },
+    {
+      "answer": "The repo uses Next.js App Router route handlers directly in src/app/[locale]/api/*/route.ts without a service/controller abstraction. The ticket explicitly requests a service/controller pattern that doesn't match the existing architecture. Since this is an eval ticket, the files must be created from scratch following the ticket's specified pattern.",
+      "evidence": [
+        "src/app/[locale]/api/counter/route.ts: direct PUT handler with Drizzle queries, no service layer",
+        "src/app/[locale]/api/favorite-restaurants/route.ts: direct GET/POST/DELETE handlers with Clerk auth and Drizzle queries, no service layer",
+        "scout/reference-map.json: 'The repo uses Next.js App Router with API handlers directly in route.ts files under src/app/[locale]/api/. No service or controller abstraction layer is used.'"
+      ]
+    },
+    {
+      "answer": "Yes. tsconfig.json has strict: true and strictNullChecks: true. With these settings, treating Promise<User | null> as Promise<User> would be a compile-time type error.",
+      "evidence": [
+        "tsconfig.json line 16: strict: true",
+        "tsconfig.json line 18: strictNullChecks: true"
+      ]
+    },
+    {
+      "answer": "Existing patterns: Clerk auth via await auth() returning { userId }, 401 for unauthorized, Zod safeParse validation with 422 for invalid input, Drizzle ORM for DB queries via db singleton from @/libs/DB, NextResponse.json for all responses. Named exports only (AGENTS.md convention).",
+      "evidence": [
+        "src/app/[locale]/api/favorite-restaurants/route.ts: auth(), userId check, db.select/insert/delete, NextResponse.json with status codes",
+        "AGENTS.md: 'Named exports only (no default exports, except Next.js pages)' and 'Absolute imports via @/'"
+      ]
+    }
+  ],
+  "statement": "The ticket describes a TypeScript null-handling type error in src/services/user-service.ts and src/controllers/user-controller.ts, but neither file nor directory exists. No User schema or model exists in the codebase. This is a greenfield creation task: the implementation must create a User schema in src/models/Schema.ts (with a Drizzle migration), a user-service.ts with getUserById returning Promise<User | null>, and a user-controller.ts (or route handler) that null-checks the result and returns 404. The core fix pattern is straightforward: the controller must narrow the User | null return type before using the result, returning a 404 NextResponse when null.",
+  "followups": []
+}
