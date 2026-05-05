@@ -1,0 +1,110 @@
+{
+  "problem": "Ticket references src/services/user-service.ts (line 45 type error: getUserById returns Promise<User | null>) and src/controllers/user-controller.ts (calling code treats return as Promise<User> without null-checking). Both files and their parent directories do not exist in the repository. No User model/schema exists either. The files must be created to introduce the described service/controller pattern with the correct null-handling.",
+  "files": [
+    {
+      "path": "src/services/user-service.ts",
+      "why": "Ticket-referenced service file containing getUserById function. Does NOT exist; must be created.",
+      "exists": false
+    },
+    {
+      "path": "src/controllers/user-controller.ts",
+      "why": "Ticket-referenced controller calling getUserById without null check. Does NOT exist; must be created.",
+      "exists": false
+    },
+    {
+      "path": "src/models/Schema.ts",
+      "why": "Drizzle ORM schema definitions. Currently defines counterSchema and favoriteRestaurantSchema only. No User schema exists. A user schema may need to be added here.",
+      "exists": true
+    },
+    {
+      "path": "src/libs/DB.ts",
+      "why": "Database connection singleton used by all data-access code. Exports `db` instance with Drizzle ORM.",
+      "exists": true
+    },
+    {
+      "path": "src/utils/DBConnection.ts",
+      "why": "Creates Drizzle connection with pg Pool using DATABASE_URL. Referenced schema import from @/models/Schema.",
+      "exists": true
+    },
+    {
+      "path": "src/app/[locale]/api/counter/route.ts",
+      "why": "Existing API route pattern showing how db queries, validation, and NextResponse are used. No service/controller layer; logic is inline.",
+      "exists": true
+    },
+    {
+      "path": "src/app/[locale]/api/favorite-restaurants/route.ts",
+      "why": "Existing API route showing auth (Clerk), Drizzle queries, Zod validation, and 401/422 error responses. Closest pattern to what the ticket describes.",
+      "exists": true
+    },
+    {
+      "path": "src/validations/CounterValidation.ts",
+      "why": "Example Zod validation schema pattern used by existing routes.",
+      "exists": true
+    },
+    {
+      "path": "src/validations/FavoriteRestaurantValidation.ts",
+      "why": "Example Zod validation schema pattern showing multiple exports for different operations.",
+      "exists": true
+    },
+    {
+      "path": "tsconfig.json",
+      "why": "TypeScript config: strict: true, strictNullChecks: true. This configuration is what would surface the described type error (Promise<User | null> used as Promise<User>).",
+      "exists": true
+    },
+    {
+      "path": "drizzle.config.ts",
+      "why": "Drizzle Kit config: schema in ./src/models/Schema.ts, migrations output to ./migrations, dialect postgresql.",
+      "exists": true
+    },
+    {
+      "path": "package.json",
+      "why": "Quality gate commands: check:types (tsc --noEmit), lint (ultracite), test (vitest), build (db:migrate + next build). Drizzle ORM dependency confirmed.",
+      "exists": true
+    },
+    {
+      "path": "AGENTS.md",
+      "why": "Coding conventions: named exports only, absolute imports via @/, no default exports (except Next.js pages), TypeScript everywhere, JSDoc style guidance, test naming conventions.",
+      "exists": true
+    },
+    {
+      "path": "src/libs/Env.ts",
+      "why": "Environment variable validation with @t3-oss/env-nextjs. All env access must go through Env.",
+      "exists": true
+    },
+    {
+      "path": "src/libs/Logger.ts",
+      "why": "Logger module using @logtape/logtape. Exported as `logger` from 'app' category.",
+      "exists": true
+    }
+  ],
+  "facts": [
+    "Neither src/services/ nor src/controllers/ directories exist in the repository.",
+    "No User model, schema, or type definition exists anywhere in the codebase (grep for 'getUserById' and 'User' type returned zero hits in src/).",
+    "Existing data access is done inline in Next.js API route handlers (src/app/[locale]/api/*/route.ts), not through a service/controller layer.",
+    "Drizzle ORM is used (drizzle-orm ^0.45.1, drizzle-kit ^0.31.10) with PostgreSQL via pg Pool.",
+    "Database schema is at src/models/Schema.ts, defining counterSchema and favoriteRestaurantSchema only.",
+    "Migrations are file-based: drizzle-kit generate outputs to ./migrations/, and db:migrate applies them. Build script runs db:migrate before next build.",
+    "TypeScript strict mode is enabled with strictNullChecks: true — a Promise<User | null> assigned to Promise<User> would be a compile error.",
+    "Quality gates: check:types (tsc --noEmit --pretty), lint (ultracite check --type-aware --type-check), test (vitest run), build (run-s db:migrate build:next).",
+    "Auth is handled via @clerk/nextjs; userId comes from `auth()` call (see favorite-restaurants route).",
+    "Existing patterns use NextResponse.json() for API responses with status codes (401, 422).",
+    "AGENTS.md mandates: named exports, @/ absolute imports, no default exports, sentence-case JSDoc, Zod type-only import, no unnecessary try/catch.",
+    "Test conventions: *.test.ts co-located, *.spec.ts in tests/, vitest + vitest-browser-react, describe/it pattern."
+  ],
+  "unknowns": [
+    "Whether the ticket intends for these files to be created from scratch (most likely given evidence) or whether they were supposed to exist on a different branch.",
+    "What shape the User type should take — no User model or interface exists in the codebase.",
+    "Whether the user-service should query an actual users database table (requiring a schema addition and migration) or use Clerk's user data API.",
+    "Whether the controller pattern (src/controllers/) is intended to replace the existing inline API route pattern, or coexist alongside it.",
+    "Whether a new API route (e.g., src/app/[locale]/api/users/[id]/route.ts) should be created to wire the controller, or if the controller is invoked differently."
+  ],
+  "orm": {
+    "type": "drizzle",
+    "migrationStrategy": "file-based-migrations",
+    "migrationDirectory": "./migrations",
+    "schemaFile": "./src/models/Schema.ts",
+    "generateCommand": "npm run db:generate",
+    "migrateCommand": "npm run db:migrate",
+    "buildScriptRunsMigrate": true
+  }
+}
