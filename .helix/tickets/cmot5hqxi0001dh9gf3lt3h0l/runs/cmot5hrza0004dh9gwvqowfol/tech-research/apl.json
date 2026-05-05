@@ -1,0 +1,51 @@
+{
+  "questions": [
+    "Which Drizzle ORM query API should getUserById use — db.select().from().where() or db.query.findFirst() — and what does each return when no row matches?",
+    "How should the User type be inferred from the Drizzle schema to ensure compile-time type safety with strictNullChecks?",
+    "What minimal columns should the userSchema define, given the ticket only requires an ID-based lookup?",
+    "Should the controller be a standalone function or export a Next.js-compatible request handler, and how should it receive the user ID?",
+    "Does the implementation introduce any new npm dependencies beyond what already exists in the repository?"
+  ],
+  "answers": [
+    {
+      "answer": "Use db.select().from(userSchema).where(eq(userSchema.id, id)) — the pattern already used by both existing route handlers (counter and favorite-restaurants). This returns an array; take result[0] and return null if undefined. The alternative db.query.userSchema.findFirst() returns T | undefined directly, but the select-from-where pattern is the established repo convention. Both work correctly with strictNullChecks.",
+      "evidence": [
+        "src/app/[locale]/api/counter/route.ts lines 23-30: uses db.insert(counterSchema).values(...).returning() with result[0]?.count access",
+        "src/app/[locale]/api/favorite-restaurants/route.ts lines 23-26: uses db.select().from(favoriteRestaurantSchema).where(eq(...))",
+        "Context7 Drizzle docs confirm findFirst() returns T | undefined, while select().from().where() returns T[]"
+      ]
+    },
+    {
+      "answer": "Use typeof userSchema.$inferSelect to derive the User type. This is the idiomatic Drizzle ORM pattern confirmed by official docs. Export it as a named type from Schema.ts so both the service and controller can import it.",
+      "evidence": [
+        "Context7 Drizzle docs (goodies.mdx): 'type SelectUser = typeof users.$inferSelect' — three equivalent forms exist, $inferSelect is the most concise",
+        "tsconfig.json line 16-18: strict: true, strictNullChecks: true — the inferred type will enforce null-checking when used as User | null"
+      ]
+    },
+    {
+      "answer": "Define a minimal schema with: id (serial, primary key), email (text, not null), name (text, not null), updatedAt and createdAt timestamps. This follows the existing pattern of counterSchema and favoriteRestaurantSchema (both use serial id, timestamps with the same configuration). Email and name are the minimum meaningful fields for a User record to support the lookup use case.",
+      "evidence": [
+        "src/models/Schema.ts lines 16-24: counterSchema uses serial('id').primaryKey(), timestamp('updated_at') with $onUpdate, timestamp('created_at') with defaultNow()",
+        "src/models/Schema.ts lines 26-35: favoriteRestaurantSchema follows the identical timestamp pattern with additional text columns"
+      ]
+    },
+    {
+      "answer": "The controller should export a named async function (e.g., getUserByIdController) that takes an id parameter (number), calls getUserById from the service, null-checks the result, and returns a NextResponse. It should NOT be a Next.js route handler directly (the ticket specifies src/controllers/, not src/app/[locale]/api/). The controller acts as an intermediary that could be called from a route handler. The ID should come as a function parameter, not parsed from a request URL — keeping the controller testable and decoupled from HTTP concerns.",
+      "evidence": [
+        "ticket.md: specifies src/controllers/user-controller.ts — a separate file, not a route handler",
+        "product/product.md: 'API route handler wiring in src/app/[locale]/api/ is explicitly out of scope'",
+        "AGENTS.md: 'Named exports only (no default exports, except Next.js pages)'"
+      ]
+    },
+    {
+      "answer": "No new npm dependencies are needed. All required functionality is available from existing dependencies: drizzle-orm/pg-core for schema definition, drizzle-orm for eq operator and type inference, next/server for NextResponse. The db singleton from @/libs/DB provides the connection.",
+      "evidence": [
+        "package.json: drizzle-orm ^0.45.1, next ^16.2.1 already installed",
+        "src/libs/DB.ts: db singleton already available via @/libs/DB import",
+        "src/models/Schema.ts: already imports serial, text, timestamp, pgTable from drizzle-orm/pg-core"
+      ]
+    }
+  ],
+  "statement": "The implementation creates three artifacts: (1) a userSchema added to src/models/Schema.ts using the existing pgTable pattern with serial id, email, name, and timestamps, plus a User type via $inferSelect; (2) src/services/user-service.ts with a getUserById function using db.select().from().where() returning Promise<User | null>; (3) src/controllers/user-controller.ts with a getUserByIdController function that null-checks the service result and returns NextResponse with 200 or 404. A Drizzle migration must be generated. No new dependencies are required. All code follows repo conventions: named exports, @/ imports, no 'any', Drizzle ORM patterns.",
+  "followups": []
+}
