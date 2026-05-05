@@ -1,0 +1,48 @@
+{
+  "questions": [
+    "Do the ticket-referenced files src/services/user-service.ts and src/controllers/user-controller.ts exist in the repository?",
+    "Does a User type or schema exist anywhere in the codebase?",
+    "Does the TypeScript configuration enforce strictNullChecks, which would surface the described type error?",
+    "What existing patterns should the new service/controller files follow?",
+    "Is there a database table or model that getUserById should query?"
+  ],
+  "answers": [
+    {
+      "answer": "Neither file exists. The directories src/services/ and src/controllers/ also do not exist. This is an [Eval] ticket requiring creation of both files.",
+      "evidence": [
+        "scout/reference-map.json: both files marked exists: false",
+        "Grep for getUserById, user-service, user-controller across src/ returned zero hits for these identifiers"
+      ]
+    },
+    {
+      "answer": "No User type, interface, or Drizzle schema exists anywhere in the codebase. A userSchema must be added to src/models/Schema.ts following the existing pattern (counterSchema, favoriteRestaurantSchema).",
+      "evidence": [
+        "src/models/Schema.ts defines only counterSchema and favoriteRestaurantSchema (lines 16-35)",
+        "Grep for 'User' across src/*.ts returned only userId references from Clerk auth and comments, no User type definition"
+      ]
+    },
+    {
+      "answer": "Yes. tsconfig.json has strict: true and strictNullChecks: true (lines 17-18). A function returning Promise<User | null> assigned to a variable typed as User (without null check) would be a compile-time error under these settings.",
+      "evidence": [
+        "tsconfig.json line 17: \"strict\": true",
+        "tsconfig.json line 18: \"strictNullChecks\": true"
+      ]
+    },
+    {
+      "answer": "Existing data access is inline in Next.js API route handlers using Drizzle ORM, NextResponse.json() for responses, Clerk auth() for authentication, and Zod for validation. The new files should follow AGENTS.md conventions: named exports, @/ absolute imports, JSDoc comments, no default exports.",
+      "evidence": [
+        "src/app/[locale]/api/favorite-restaurants/route.ts: auth(), db queries, NextResponse.json with status codes (401, 422)",
+        "AGENTS.md: named exports only, @/ imports, JSDoc, no default exports"
+      ]
+    },
+    {
+      "answer": "No users table exists. A userSchema with a users table needs to be created in src/models/Schema.ts. The schema should include at minimum an id, name, and email field, plus timestamps matching the existing pattern. A Drizzle migration must be generated.",
+      "evidence": [
+        "src/models/Schema.ts: only counter and favorite_restaurant tables defined",
+        "drizzle.config.ts: schema at ./src/models/Schema.ts, migrations output to ./migrations/"
+      ]
+    }
+  ],
+  "statement": "Root cause: Both src/services/user-service.ts and src/controllers/user-controller.ts do not exist and must be created. No User type or database schema exists either. This is an eval ticket (indicated by [Eval] prefix) requiring creation of a user service layer with getUserById returning Promise<User | null>, and a controller that properly null-checks the result and returns a 404 response when the user is not found. TypeScript strictNullChecks is enabled, which would surface the described type error if null-checking were omitted. Implementation requires: (1) adding a userSchema to src/models/Schema.ts, (2) creating src/services/user-service.ts with getUserById, (3) creating src/controllers/user-controller.ts with proper null handling and 404 response, and (4) optionally wiring an API route.",
+  "followups": []
+}

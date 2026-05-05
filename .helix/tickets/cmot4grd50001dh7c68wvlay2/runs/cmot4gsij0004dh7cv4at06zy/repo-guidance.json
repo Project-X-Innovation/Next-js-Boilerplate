@@ -1,0 +1,10 @@
+{
+  "repos": [
+    {
+      "repoKey": "next-js-boilerplate",
+      "intent": "target",
+      "rationale": "Single repository in scope. Both ticket-referenced files (src/services/user-service.ts, src/controllers/user-controller.ts) must be created here, along with the User schema in src/models/Schema.ts. All code changes are contained within this repository."
+    }
+  ],
+  "updatedBy": "diagnosis"
+}
