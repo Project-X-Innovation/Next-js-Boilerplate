@@ -1,0 +1,71 @@
+{
+  "problem": "Ticket references src/services/user-service.ts and src/controllers/user-controller.ts for a TypeScript type error fix (null-check on getUserById), but neither file nor directory exists in the repository. The repo has no services/ or controllers/ directories, no User schema/model, and uses Next.js App Router API routes directly in src/app/[locale]/api/ without a service/controller separation layer.",
+  "files": [
+    {
+      "path": "src/models/Schema.ts",
+      "why": "Only schema file in the repo; defines counterSchema and favoriteRestaurantSchema. No User schema exists. The ticket requires a User model to support getUserById."
+    },
+    {
+      "path": "src/app/[locale]/api/counter/route.ts",
+      "why": "Existing API route pattern showing how handlers are structured: direct Drizzle queries in route handlers, NextResponse returns, Zod validation, no service/controller separation."
+    },
+    {
+      "path": "src/app/[locale]/api/favorite-restaurants/route.ts",
+      "why": "Second API route pattern showing Clerk auth integration (userId from auth()), DB queries with drizzle-orm, error responses (401/422). Most relevant pattern for a user-related endpoint."
+    },
+    {
+      "path": "src/libs/DB.ts",
+      "why": "Database connection singleton used by all API routes. Exports db instance backed by Drizzle ORM."
+    },
+    {
+      "path": "src/utils/DBConnection.ts",
+      "why": "Creates the Drizzle connection with pg Pool. Imports all schemas from src/models/Schema.ts."
+    },
+    {
+      "path": "src/libs/Env.ts",
+      "why": "Env var validation via @t3-oss/env-nextjs with Zod. DATABASE_URL and CLERK_SECRET_KEY are required server vars."
+    },
+    {
+      "path": "src/validations/CounterValidation.ts",
+      "why": "Zod validation pattern used for API request bodies."
+    },
+    {
+      "path": "src/validations/FavoriteRestaurantValidation.ts",
+      "why": "Zod validation pattern for restaurant endpoints."
+    },
+    {
+      "path": "tsconfig.json",
+      "why": "TypeScript config with strict: true, strictNullChecks: true. These settings make the described null-check type error a compile-time failure."
+    },
+    {
+      "path": "drizzle.config.ts",
+      "why": "Drizzle Kit config: schema at ./src/models/Schema.ts, migrations output to ./migrations, postgresql dialect."
+    },
+    {
+      "path": "package.json",
+      "why": "Quality gates: lint (ultracite check --type-aware --type-check), check:types (tsc --noEmit), test (vitest run), build (run-s db:migrate build:next). ORM commands: db:generate (drizzle-kit generate), db:migrate (drizzle-kit migrate)."
+    }
+  ],
+  "facts": [
+    "src/services/user-service.ts does not exist; src/services/ directory does not exist.",
+    "src/controllers/user-controller.ts does not exist; src/controllers/ directory does not exist.",
+    "No User schema/model is defined anywhere in the codebase. Only counterSchema and favoriteRestaurantSchema exist in src/models/Schema.ts.",
+    "The repo uses Next.js App Router with API handlers directly in route.ts files under src/app/[locale]/api/. No service or controller abstraction layer is used.",
+    "Auth is handled by Clerk (@clerk/nextjs). User identity comes from await auth() returning { userId }. There is no local user table.",
+    "ORM is Drizzle (drizzle-orm v0.45.1 + drizzle-kit v0.31.10) with PostgreSQL dialect.",
+    "Migration strategy is file-based: build script runs 'run-s db:migrate build:next'; db:migrate runs 'dotenv -c -- drizzle-kit migrate'.",
+    "Migrations directory is ./migrations with existing files: 0000_init-db.sql, 0001_motionless_puma.sql.",
+    "TypeScript strict mode is enabled with strictNullChecks: true in tsconfig.json.",
+    "Quality gate commands per AGENTS.md: build-local, lint, check:types, check:deps, check:i18n, test, test:e2e. All invoked via 'bun run'.",
+    "AGENTS.md mandates named exports only (no default exports except Next.js pages), @/ absolute imports, Zod type-only imports, and TypeScript everywhere with no 'any'.",
+    "Test conventions: *.test.ts co-located for unit, *.spec.ts in tests/ for integration, *.e2e.ts in tests/ for Playwright.",
+    "The ticket requires creating new files (user-service.ts, user-controller.ts) and potentially a User schema, which would require a Drizzle migration."
+  ],
+  "unknowns": [
+    "Whether the ticket intends for the files to be created from scratch or was written against a different branch/state where they already exist.",
+    "What 'User' type/schema the ticket expects — no User model is defined. Unclear whether a new DB table is needed or if the user data comes from Clerk.",
+    "Whether the service/controller pattern requested by the ticket is the intended architecture, given the repo's existing pattern of direct route handlers without service/controller separation.",
+    "How getUserById is supposed to work — query a local DB user table, or fetch from Clerk? No existing user data access pattern to reference.",
+    "Whether a Drizzle migration will be needed if a new User schema is introduced."
+  ]
+}
