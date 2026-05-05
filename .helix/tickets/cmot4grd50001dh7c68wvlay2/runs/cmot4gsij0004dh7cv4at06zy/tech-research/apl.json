@@ -1,0 +1,53 @@
+{
+  "questions": [
+    "What is the idiomatic way to define a User type in this Drizzle ORM codebase?",
+    "Which Drizzle query API should getUserById use - SQL-like or relational?",
+    "How does noUncheckedIndexedAccess affect the null-handling pattern in getUserById?",
+    "Should a database migration be generated as part of this change?",
+    "What response pattern should the controller follow for 404 errors?"
+  ],
+  "answers": [
+    {
+      "answer": "Define a userSchema pgTable in src/models/Schema.ts following the existing counterSchema/favoriteRestaurantSchema pattern, then export the type via $inferSelect. This is confirmed by Drizzle ORM docs as the current recommended approach and is consistent with how the codebase defines all data models.",
+      "evidence": [
+        "src/models/Schema.ts lines 16-35: counterSchema and favoriteRestaurantSchema both use pgTable with serial id, text fields, and timestamp columns",
+        "Drizzle ORM docs (Context7): '$inferSelect is the current recommended API' for table type inference",
+        "No standalone type/interface files exist in the codebase for data models"
+      ]
+    },
+    {
+      "answer": "Use the SQL-like API (db.select().from(userSchema).where(...)) for consistency with existing codebase patterns. The relational findFirst() API is available (DBConnection.ts passes schema to drizzle) but is not used anywhere in the current code.",
+      "evidence": [
+        "src/app/[locale]/api/favorite-restaurants/route.ts lines 23-26: db.select().from(favoriteRestaurantSchema).where(...)",
+        "src/app/[locale]/api/counter/route.ts lines 23-30: db.insert(counterSchema).values(...).onConflictDoUpdate(...)",
+        "src/utils/DBConnection.ts line 18-21: drizzle({ client: pool, schema }) enables relational API, but no code uses it"
+      ]
+    },
+    {
+      "answer": "With noUncheckedIndexedAccess: true (tsconfig.json line 25), array index access like users[0] returns User | undefined. Using the nullish coalescing operator (users[0] ?? null) converts this to User | null, matching the declared return type of getUserById. This is type-safe without any casts.",
+      "evidence": [
+        "tsconfig.json line 25: 'noUncheckedIndexedAccess': true",
+        "TypeScript behavior: array[index] with noUncheckedIndexedAccess adds | undefined to the element type",
+        "The ?? operator returns the right operand when the left is null or undefined, so User | undefined ?? null becomes User | null"
+      ]
+    },
+    {
+      "answer": "Yes. Adding userSchema to Schema.ts requires running bun run db:generate to create a migration file. The build script (run-s db:migrate build:next) applies pending migrations before building. Without the migration, the table would not exist and runtime queries would fail. This is the standard workflow documented in Schema.ts comments.",
+      "evidence": [
+        "src/models/Schema.ts lines 5-8: comments document the schema change -> generate migration workflow",
+        "package.json line 8: 'build': 'run-s db:migrate build:next' runs migrations as part of build",
+        "drizzle.config.ts: migrations output to ./migrations/, schema at ./src/models/Schema.ts"
+      ]
+    },
+    {
+      "answer": "Use NextResponse.json({ error: 'User not found' }, { status: 404 }) following the existing error response pattern. The codebase uses NextResponse.json with an error message and HTTP status code for all error responses.",
+      "evidence": [
+        "src/app/[locale]/api/favorite-restaurants/route.ts line 20: NextResponse.json({ error: 'Unauthorized' }, { status: 401 })",
+        "src/app/[locale]/api/favorite-restaurants/route.ts line 47: NextResponse.json(z.treeifyError(parse.error), { status: 422 })",
+        "AGENTS.md: no unnecessary try/catch; use narrowing — the if (!user) guard is narrowing"
+      ]
+    }
+  ],
+  "statement": "The technical direction is to add a userSchema to src/models/Schema.ts following the existing pgTable pattern, export an inferred User type via $inferSelect, create src/services/user-service.ts with a getUserById function that queries via the SQL-like API and returns User | null using the users[0] ?? null pattern (safe under noUncheckedIndexedAccess), and create src/controllers/user-controller.ts with an if (!user) null guard that returns a 404 NextResponse. A Drizzle migration must be generated. No new dependencies are needed. All code follows AGENTS.md conventions: named exports, @/ imports, JSDoc, narrowing over casting.",
+  "followups": []
+}
