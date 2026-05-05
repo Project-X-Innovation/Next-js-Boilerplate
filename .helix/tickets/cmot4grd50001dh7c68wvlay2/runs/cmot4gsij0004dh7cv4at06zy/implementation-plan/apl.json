@@ -1,0 +1,45 @@
+{
+  "questions": [
+    "What is the correct sequence of implementation steps to create the user service and controller?",
+    "What files need to be created or modified, and what are their dependencies?",
+    "What verification commands should be used to confirm the implementation is correct?",
+    "Does the implementation require a Drizzle migration?"
+  ],
+  "answers": [
+    {
+      "answer": "The correct sequence is: (1) Add userSchema to src/models/Schema.ts, (2) Generate Drizzle migration via bun run db:generate, (3) Create src/services/user-service.ts with getUserById, (4) Create src/controllers/user-controller.ts with null check and 404 response, (5) Run quality gates. Step 1 must precede step 2 (schema before migration). Step 3 depends on step 1 (service imports User type from Schema). Step 4 depends on step 3 (controller imports getUserById from service).",
+      "evidence": [
+        "tech-research/tech-research.md: Option A chosen — Drizzle schema + inferred type requires schema first",
+        "drizzle.config.ts: schema at ./src/models/Schema.ts, migrations output to ./migrations/",
+        "src/services/user-service.ts imports userSchema and User from @/models/Schema",
+        "src/controllers/user-controller.ts imports getUserById from @/services/user-service"
+      ]
+    },
+    {
+      "answer": "One file is modified: src/models/Schema.ts (add userSchema + User type export). Two files are created: src/services/user-service.ts and src/controllers/user-controller.ts. One file is generated: a migration SQL file in ./migrations/. The new directories src/services/ and src/controllers/ must also be created.",
+      "evidence": [
+        "scout/reference-map.json: both target files marked exists: false; directories do not exist",
+        "tech-research/tech-research.md Summary Table: 1 modified file, 2 new files, migration generated"
+      ]
+    },
+    {
+      "answer": "Primary verification: bun run check:types (TypeScript compilation with strictNullChecks) and bun run lint (type-aware linting). Migration verification: list ./migrations/ directory and read the generated SQL file. Code review verification: read the three source files and confirm conventions, null handling, and 404 response pattern.",
+      "evidence": [
+        "package.json line 16: check:types runs tsc --noEmit --pretty",
+        "package.json line 14: lint runs ultracite check --type-aware --type-check",
+        "tsconfig.json lines 16-18: strict, strictNullChecks — would catch the described type error"
+      ]
+    },
+    {
+      "answer": "Yes. Adding userSchema to src/models/Schema.ts requires generating a migration via bun run db:generate. The build script (run-s db:migrate build:next) applies pending migrations before building. Without the migration file, the build would not create the users table, and runtime queries would fail. Existing migrations (0000_init-db.sql, 0001_motionless_puma.sql) confirm the file-based migration pattern.",
+      "evidence": [
+        "package.json line 10: build runs run-s db:migrate build:next",
+        "drizzle.config.ts: migrations output to ./migrations/",
+        "scout/reference-map.json orm.migrationStrategy: file-based-migrations",
+        "Existing migrations: 0000_init-db.sql, 0001_motionless_puma.sql in ./migrations/"
+      ]
+    }
+  ],
+  "statement": "The implementation plan defines 5 sequential, atomic steps to deliver the fix: (1) add userSchema and User type to Schema.ts following existing pgTable patterns, (2) generate a Drizzle migration for the users table, (3) create user-service.ts with getUserById returning Promise<User | null> using the SQL-like query API and users[0] ?? null pattern, (4) create user-controller.ts with if (!user) null narrowing and 404 NextResponse, (5) run check:types and lint quality gates. Verification uses 5 required checks: TypeScript compilation, lint, migration file existence, service file conventions, and controller null-check pattern.",
+  "followups": []
+}
