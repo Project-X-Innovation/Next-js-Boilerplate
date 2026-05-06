@@ -1,0 +1,144 @@
+{
+  "problem": "Verification: Tier 4 Fallback Test - Test that tier 4 org endpoint fallback resolves correctly.",
+  "repositories": [
+    "next-js-boilerplate",
+    "example-client",
+    "example-server"
+  ],
+  "files": [
+    {
+      "path": "tests/e2e/Counter.e2e.ts",
+      "why": "E2E test example using Playwright; shows test pattern for API integration testing with page.request API"
+    },
+    {
+      "path": "tests/integration/Counter.spec.ts",
+      "why": "Integration test example; demonstrates test infrastructure and patterns"
+    },
+    {
+      "path": "package.json",
+      "why": "Lists test scripts: test (vitest run), test:e2e (playwright test); also specifies dev/build/lint commands"
+    },
+    {
+      "path": "playwright.config.ts",
+      "why": "Playwright configuration; defines webServer and test settings for e2e tests"
+    }
+  ],
+  "facts": [
+    {
+      "claim": "next-js-boilerplate has E2E test infrastructure via Playwright",
+      "evidence": "playwright.config.ts exists, tests/e2e/ directory contains Counter.e2e.ts, I18n.e2e.ts, Sanity.check.e2e.ts, Visual.e2e.ts; package.json includes @playwright/test ^1.58.2 and test:e2e script"
+    },
+    {
+      "claim": "next-js-boilerplate has unit/integration test infrastructure via Vitest",
+      "evidence": "tests/integration/Counter.spec.ts uses Playwright test harness; package.json includes vitest ^4.1.0; test script runs 'vitest run'"
+    },
+    {
+      "claim": "API endpoints are defined in example-server Express routes",
+      "evidence": "example-server/src/routes/ contains: auth.ts, call.ts, contacts.ts, groups.ts, messages.ts, notifications.ts, optimize.ts, permissions.ts, projects.ts, steps.ts, subprojects.ts, words.ts; routes-api.ts coordinates routing"
+    },
+    {
+      "claim": "example-client makes API calls via fetch with VITE_API_URL configuration",
+      "evidence": "src/api/client.ts reads 'import.meta.env.VITE_API_URL || http://localhost:3000/api'; src/api/optimize.ts uses API_BASE constant; .env file exists"
+    },
+    {
+      "claim": "No explicit 'tier 4 org endpoint fallback' implementation found in source code",
+      "evidence": "Grep searches for 'tier', 'Tier', 'fallback', 'Fallback' in non-node_modules TS files returned: only Sentry config 'org' param in next.config.ts, playwright 'fallback' in comments, AddressInput 'fallback' in google places logic, callService 'fallback' in IVR logic - no tier/fallback logic related to API endpoint resolution or org-specific routing"
+    },
+    {
+      "claim": "example-server uses Prisma ORM for database operations",
+      "evidence": "package.json lists @prisma/client ^6.6.0 and prisma ^6.6.0; src/lib/prisma.ts exists; Prisma schema files expected in standard location"
+    }
+  ],
+  "unknowns": [
+    {
+      "question": "What does 'tier 4 org endpoint fallback' refer to?",
+      "context": "Ticket asks to test this feature, but no explicit implementation found. Could be: (a) endpoint selection based on organization tier level, (b) fallback to alternate API endpoint when primary fails, (c) tiered API access/rate limiting, or (d) feature not yet implemented. Needs clarification."
+    },
+    {
+      "question": "Which repository(ies) contain the tier 4 implementation?",
+      "context": "Ticket is multi-repo but description doesn't specify scope. example-server has API routes; example-client makes API calls; next-js-boilerplate may have integration tests. Unclear which owns the fallback logic."
+    },
+    {
+      "question": "Is there a Prisma schema file documenting data model for organizations/tiers?",
+      "context": "Prisma usage detected but schema file not located. This would clarify whether org tiers are modeled in database."
+    },
+    {
+      "question": "What is the expected fallback behavior?",
+      "context": "Should fallback happen at: (a) client API call level, (b) server endpoint resolution level, (c) database query level, or (d) external service call level? No documentation found."
+    }
+  ],
+  "entryPoints": [
+    {
+      "type": "API Server",
+      "location": "example-server/src/index.ts",
+      "description": "Express server entry point; registers middleware and routes"
+    },
+    {
+      "type": "API Routes",
+      "location": "example-server/src/routes-api.ts",
+      "description": "Central routing file that mounts all route handlers"
+    },
+    {
+      "type": "API Client",
+      "location": "example-client/src/api/client.ts",
+      "description": "Request wrapper that constructs API calls; uses VITE_API_URL env var"
+    },
+    {
+      "type": "E2E Tests",
+      "location": "next-js-boilerplate/tests/e2e/",
+      "description": "Playwright e2e tests; entry point for browser-based API testing"
+    }
+  ],
+  "executionSignals": [
+    {
+      "type": "Build",
+      "command": "npm run build",
+      "location": "example-server/package.json",
+      "output": "Compiles TypeScript to dist/index.js"
+    },
+    {
+      "type": "Dev Server",
+      "command": "npm run dev",
+      "location": "example-server/package.json",
+      "output": "Runs tsx watch src/index.ts on port (env configured)"
+    },
+    {
+      "type": "Test Suite",
+      "command": "npm run test:e2e",
+      "location": "next-js-boilerplate/package.json",
+      "output": "Runs Playwright tests; launches webServer defined in playwright.config.ts"
+    },
+    {
+      "type": "Test Suite",
+      "command": "npm run test",
+      "location": "next-js-boilerplate/package.json",
+      "output": "Runs Vitest unit/integration tests"
+    }
+  ],
+  "qualityGates": [
+    {
+      "type": "Linting",
+      "command": "npm run lint",
+      "location": "next-js-boilerplate/package.json",
+      "tool": "ultracite (ESLint alternative)"
+    },
+    {
+      "type": "Type Checking",
+      "command": "npm run check:types",
+      "location": "next-js-boilerplate/package.json",
+      "tool": "tsc --noEmit"
+    },
+    {
+      "type": "E2E Tests",
+      "command": "npm run test:e2e",
+      "location": "next-js-boilerplate/package.json",
+      "tool": "Playwright"
+    },
+    {
+      "type": "Unit Tests",
+      "command": "npm run test",
+      "location": "next-js-boilerplate/package.json",
+      "tool": "Vitest"
+    }
+  ]
+}
