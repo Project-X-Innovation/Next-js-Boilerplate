@@ -1,0 +1,21 @@
+{
+  "repos": [
+    {
+      "repoKey": "next-js-boilerplate",
+      "intent": "target",
+      "rationale": "Primary target for marketing infrastructure completion. Requires: (1) PostHog SDK installation and initialization, (2) frontend UI/API for exposing SMS and email capabilities from backend, (3) email marketing platform integration. This is the main user-facing application where most marketing tools should be exposed."
+    },
+    {
+      "repoKey": "example-server",
+      "intent": "context",
+      "rationale": "Context repository providing backend communication infrastructure (Twilio for SMS, Nodemailer for email, node-cron for scheduling). Already production-ready for messaging. May need minor API enhancements to support integration with next-js-boilerplate frontend, but core functionality is complete."
+    },
+    {
+      "repoKey": "example-client",
+      "intent": "context",
+      "rationale": "Context repository demonstrating contact/group management and message composition UI patterns. Useful as reference for implementing similar features in next-js-boilerplate if needed, but not a target for direct changes. Shows how to structure messaging workflows."
+    }
+  ],
+  "updatedBy": "diagnosis",
+  "summary": "Helix has extensive marketing infrastructure but it is incomplete and fragmented. PostHog analytics is configured but SDK missing. Email/SMS capabilities exist only in backend (example-server) with no frontend exposure. Primary focus should be next-js-boilerplate to unify marketing tooling. example-server and example-client provide context/reference patterns but require no changes."
+}

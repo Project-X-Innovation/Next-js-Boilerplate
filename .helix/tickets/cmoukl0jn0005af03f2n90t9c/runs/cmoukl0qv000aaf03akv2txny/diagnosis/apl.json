@@ -1,0 +1,57 @@
+{
+  "questions": [
+    "What marketing tools and capabilities currently exist across the Helix codebase?",
+    "Which marketing tools are production-ready, incomplete, or non-functional?",
+    "What gaps exist in the marketing infrastructure?",
+    "How are marketing tools distributed across the three repositories, and is there fragmentation?",
+    "What should be the priority for completing or integrating incomplete marketing capabilities?"
+  ],
+  "answers": [
+    {
+      "answer": "Helix has extensive marketing infrastructure distributed across three repositories: next-js-boilerplate (primary frontend) with analytics, monitoring, SEO, and security; example-server (backend) with communication capabilities; and example-client (UI) with contact management and location features. Total of 13 marketing-related integrations or tools identified.",
+      "evidence": [
+        "scout/scout-summary.md sections on Next.js Boilerplate, Example Server, and Example Client",
+        "scout/reference-map.json documents all identified marketing tools and their status",
+        "Complete inventory: Sentry, PostHog, Better Stack, Checkly, Arcjet, Clerk, sitemap/robots.txt, next-intl+Crowdin, LogTape, CodeRabbit, Twilio, Nodemailer, Google Maps"
+      ]
+    },
+    {
+      "answer": "Production-ready: Sentry, Clerk, Better Stack, Checkly, Arcjet, SEO infrastructure (sitemap/robots.txt), Localization (next-intl+Crowdin), LogTape, CodeRabbit, Twilio, Nodemailer, Google Maps. Incomplete: PostHog (configured but SDK package missing from package.json). Non-functional impact: PostHog analytics cannot be initialized without the SDK installation.",
+      "evidence": [
+        "scout/scout-summary.md: 'PostHog (configured but not installed): Environment variables defined...PostHog SDK package is missing from package.json, so analytics are not functional'",
+        "scout/reference-map.json fact claiming PostHog SDK absence: 'no PostHog SDK import found in codebase'",
+        "All other tools verified as installed in package.json with proper initialization code"
+      ]
+    },
+    {
+      "answer": "Six critical gaps exist: (1) PostHog SDK missing—analytics configured but non-functional; (2) Email marketing integration absent—no SendGrid, Mailchimp, or similar platform configured; (3) Frontend-backend disconnect—SMS (Twilio) and email (Nodemailer) isolated in example-server, not exposed via next-js-boilerplate; (4) No CRM/lead capture forms or newsletter signup; (5) No social media sharing metadata or integration; (6) Checkly monitoring tests not visible in repository.",
+      "evidence": [
+        "scout/scout-summary.md 'Gaps & Limitations' section documenting each gap",
+        "scout/reference-map.json unknowns section listing 6 specific gaps and their impact",
+        "No SendGrid, Mailchimp, or email marketing packages found in package.json analysis"
+      ]
+    },
+    {
+      "answer": "Marketing tools are distributed across repositories with clear separation of concerns: next-js-boilerplate handles frontend-facing infrastructure (analytics, monitoring, SEO, auth, localization); example-server handles backend communication (email, SMS, notifications); example-client provides UI for contact management. However, this creates fragmentation where SMS/email capabilities exist in the backend but have no frontend exposure or user interface.",
+      "evidence": [
+        "scout/scout-summary.md section 'Example Server (Backend)': 'communication and notification infrastructure isolated from the frontend'",
+        "scout/scout-summary.md 'Gaps & Limitations': 'Frontend-backend disconnect: SMS (Twilio) and email (Nodemailer) capabilities are isolated in example-server. The next-js-boilerplate frontend has no direct integration or UI for these features.'"
+      ]
+    },
+    {
+      "answer": "Based on impact and functionality, priorities should be: (1) HIGH: Complete PostHog integration by adding SDK to next-js-boilerplate package.json and initializing in client/server code—enables product analytics for marketing decisions; (2) HIGH: Expose email/SMS capabilities via next-js-boilerplate frontend—currently hidden in backend; (3) MEDIUM: Implement email marketing platform integration (SendGrid or similar); (4) MEDIUM: Add CRM/lead capture forms to marketing pages; (5) LOW: Social media metadata optimization (can be added incrementally).",
+      "evidence": [
+        "scout/scout-summary.md 'Gaps & Limitations' shows PostHog and email/SMS as most impactful gaps",
+        "scout/reference-map.json unknowns note PostHog as blocking 'analytics may not be functional without explicit SDK installation'",
+        "Example server already has SMS/email implemented, so exposure through UI is lower-effort than building from scratch"
+      ]
+    }
+  ],
+  "statement": "Helix possesses production-grade marketing infrastructure across multiple domains (monitoring, security, authentication, localization, SEO, logging) but faces critical gaps in product analytics and customer communication. PostHog analytics is configured at the environment level but non-functional due to missing SDK package. SMS and email communication capabilities exist exclusively in the backend server with no frontend user interface or integration. These gaps prevent Helix from achieving end-to-end marketing capability. The priority path forward is: (1) complete PostHog integration in next-js-boilerplate to enable product analytics, (2) expose SMS/email capabilities through the frontend, and (3) integrate commercial email marketing platform. Each step builds toward a unified, integrated marketing platform spanning analytics, user authentication, communication, and localization.",
+  "followups": [
+    "Should email/SMS capabilities be migrated into next-js-boilerplate or remain decoupled in example-server with API exposure?",
+    "Is SendGrid, Mailchimp, or another email platform preferred for email marketing integration?",
+    "Should CRM/lead capture be built custom or integrated with a third-party platform (e.g., Pipedrive, HubSpot)?",
+    "What is the deployment/rollout sequence for completing these integrations without disrupting production?"
+  ]
+}
