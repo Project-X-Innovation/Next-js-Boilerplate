@@ -1,0 +1,55 @@
+{
+  "questions": [
+    "Where should the tier 4 inference endpoint fallback logic be implemented?",
+    "What does 'tier 4' mean in the context of this project's inference endpoints?",
+    "Is this a test-driven development (TDD) task or a regression test for an existing feature?",
+    "What environment variables and endpoint configurations are needed for tier 4 fallback?",
+    "Should the Anthropic SDK be installed and integrated?"
+  ],
+  "answers": [
+    {
+      "answer": "No tier 4 inference endpoint fallback logic currently exists in the codebase",
+      "evidence": [
+        "Grep searches for 'tier', 'tier4', 'tier 4' found only ticket.md references",
+        "No ANTHROPIC_API_KEY references in production code",
+        "No Anthropic SDK (@anthropic-ai/sdk) installed in any repository",
+        "Scout verified no tier 4 configuration or fallback mechanism found"
+      ]
+    },
+    {
+      "answer": "next-js-boilerplate is the only repo with active test infrastructure",
+      "evidence": [
+        "next-js-boilerplate has Vitest configured with npm run test script",
+        "Integration tests exist in tests/integration/*.spec.ts pattern",
+        "Unit tests co-located in src/**/*.test.ts",
+        "example-server and example-client have no test framework installed"
+      ]
+    },
+    {
+      "answer": "example-server is the logical location for inference endpoint logic (backend)",
+      "evidence": [
+        "example-server is Express.js backend API",
+        "Handles routes for auth, contacts, messages, projects, etc.",
+        "API key and endpoint management is typically backend responsibility",
+        "Scout identified it as potential primary location but notes lack of test framework"
+      ]
+    },
+    {
+      "answer": "The ticket references Anthropic API concepts (tier, fallback endpoint, ANTHROPIC_API_KEY)",
+      "evidence": [
+        "Service tier parameter exists in Anthropic SDK (service_tier: 'auto' | 'standard_only')",
+        "ANTHROPIC_API_KEY is standard Anthropic SDK environment variable",
+        "However, 'tier 4' is not official Anthropic documentation terminology",
+        "May be custom tier system for this project or future feature"
+      ]
+    }
+  ],
+  "statement": "The tier 4 inference endpoint fallback mechanism is not implemented in the codebase and lacks test coverage. The ticket appears to be either a test-first (TDD) task defining expected behavior or a regression test for a feature that doesn't yet exist. No Anthropic SDK integration, endpoint tiering system, or ANTHROPIC_API_KEY handling is present. Critical unknowns remain about what 'tier 4' means, where the feature should live, and what the fallback behavior should be.",
+  "followups": [
+    "Clarify the definition and scope of 'tier 4' - is it an Anthropic API concept or custom to this project?",
+    "Specify whether tier 4 fallback logic should be implemented in next-js-boilerplate, example-server, or both",
+    "Determine if this is test-driven development (write test first) or regression testing (feature exists elsewhere)",
+    "Define the complete fallback behavior: when tier 4 should activate, what endpoint it should use, how to handle API key absence",
+    "Decide if Anthropic SDK should be installed and where it should be integrated"
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "repos": [
+    {
+      "repoKey": "next-js-boilerplate",
+      "intent": "target",
+      "rationale": "Primary repo for test implementation. Has Vitest test runner (npm run test), integration test pattern (tests/integration/*.spec.ts), and unit test patterns (src/**/*.test.ts). Suitable for writing tests to verify tier 4 fallback behavior once feature is clarified."
+    },
+    {
+      "repoKey": "example-server",
+      "intent": "undecided",
+      "rationale": "Logical location for tier 4 inference endpoint logic (Express.js backend handles routes, API key management, endpoint selection). However, currently lacks test framework (no test runner or vitest/jest dependency). Will be target repo only if tier 4 feature implementation is assigned here; implementation plan must clarify. If feature goes here, test framework must be added."
+    },
+    {
+      "repoKey": "example-client",
+      "intent": "context",
+      "rationale": "React SPA client only - no backend logic or test framework. No changes needed. Client makes HTTP requests to example-server backend. Inference endpoint fallback is backend responsibility."
+    }
+  ],
+  "updatedBy": "diagnosis",
+  "notes": "Tier 4 fallback mechanism does not currently exist. Specification is incomplete - see diagnosis-statement.md for required clarifications (define 'tier 4', specify fallback behavior, choose implementation location, clarify TDD vs regression testing intent, decide on SDK integration). Repo guidance may change once these clarifications are provided by product/research phase."
+}
