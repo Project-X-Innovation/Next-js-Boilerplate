@@ -1,0 +1,80 @@
+{
+  "problem": "Verify tier 4 inference endpoint fallback mechanism works when no per-ticket endpoint is set and no ANTHROPIC_API_KEY exists.",
+  "files": [
+    {
+      "path": "package.json",
+      "why": "Defines test framework (Vitest) and build scripts for verification"
+    },
+    {
+      "path": "tests/integration/",
+      "why": "Test directory pattern for integration tests (*.spec.ts)"
+    },
+    {
+      "path": "src/utils/Helpers.test.ts",
+      "why": "Example of unit test patterns (*.test.ts co-located with source)"
+    },
+    {
+      "path": "vitest.config.ts",
+      "why": "Vitest configuration for test execution"
+    }
+  ],
+  "facts": [
+    {
+      "fact": "next-js-boilerplate has Vitest configured and is the only repo with active test infrastructure",
+      "evidence": "package.json scripts: 'test': 'vitest run'",
+      "status": "verified"
+    },
+    {
+      "fact": "No Anthropic SDK (@anthropic-ai/sdk or anthropic) is installed in any repository",
+      "evidence": "Grep search across all package.json dependencies",
+      "status": "verified"
+    },
+    {
+      "fact": "No tier 4 fallback logic currently exists in the codebase",
+      "evidence": "Grep searches for 'tier', 'tier4', 'tier 4' returned only ticket.md references",
+      "status": "verified"
+    },
+    {
+      "fact": "No ANTHROPIC_API_KEY environment variable references found",
+      "evidence": "Grep search returned only ticket.md",
+      "status": "verified"
+    },
+    {
+      "fact": "example-client has no test framework configured",
+      "evidence": "package.json has no test script or vitest/jest dependency",
+      "status": "verified"
+    },
+    {
+      "fact": "example-server has no test framework configured",
+      "evidence": "package.json has dev/build/start scripts but no test framework",
+      "status": "verified"
+    }
+  ],
+  "unknowns": [
+    {
+      "unknown": "What is 'tier 4' exactly?",
+      "context": "Ticket refers to 'tier 4 inference endpoint fallback' but no tiering system or documentation found",
+      "impact": "Cannot determine expected fallback behavior without understanding the tier hierarchy"
+    },
+    {
+      "unknown": "Where should tier 4 fallback logic be implemented?",
+      "context": "Three repos available; no Anthropic client initialization found in any",
+      "impact": "Cannot locate which repo owns the fallback implementation"
+    },
+    {
+      "unknown": "What is the fallback endpoint for tier 4?",
+      "context": "No endpoint configuration found in environment files or code",
+      "impact": "Cannot verify the fallback mechanism without knowing the target endpoint"
+    },
+    {
+      "unknown": "What per-ticket endpoint mechanism exists?",
+      "context": "Ticket mentions 'no per-ticket endpoint is set' but no such configuration found",
+      "impact": "Cannot understand the endpoint hierarchy or override mechanism"
+    },
+    {
+      "unknown": "Should the test be added to next-js-boilerplate or example-server?",
+      "context": "Only next-js-boilerplate has test infrastructure; example-server has no test framework",
+      "impact": "Affects where test code should be placed"
+    }
+  ]
+}
