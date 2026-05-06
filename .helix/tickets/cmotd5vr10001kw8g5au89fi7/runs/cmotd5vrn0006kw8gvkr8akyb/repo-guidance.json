@@ -1,0 +1,21 @@
+{
+  "repos": [
+    {
+      "repoKey": "next-js-boilerplate",
+      "intent": "target",
+      "rationale": "Primary repository for test infrastructure (Playwright E2E and Vitest integration tests). This is where tier 4 fallback verification tests should be written and executed. Test patterns exist (Counter.spec.ts, Counter.e2e.ts); verification tests will follow same patterns. However, tests are blocked until the feature is implemented in backend/client."
+    },
+    {
+      "repoKey": "example-server",
+      "intent": "context",
+      "rationale": "Backend API server where tier 4 feature must be implemented. Required changes: (1) Add Organization and Tier models to Prisma schema, (2) Implement tier detection middleware, (3) Add tier-aware routing logic in src/routes-api.ts or src/middleware/. This work is a prerequisite for verification testing but is not part of this ticket. Diagnosis found no existing tier-based routing or organization models."
+    },
+    {
+      "repoKey": "example-client",
+      "intent": "context",
+      "rationale": "Frontend API client. May require changes if tier 4 fallback is client-side (retry logic, alternate endpoints). Currently has single API endpoint (VITE_API_URL) with no fallback mechanism. Changes needed only if feature specification calls for client-side fallback behavior. This work is a prerequisite for verification testing but is not part of this ticket."
+    }
+  ],
+  "updatedBy": "diagnosis",
+  "rationale": "Diagnosis revealed that the 'tier 4 org endpoint fallback' feature is not implemented in the codebase. This verification ticket cannot be completed until the feature exists. Repo guidance identifies where work is needed: backend implementation (example-server), possible frontend changes (example-client), and test writing (next-js-boilerplate). See diagnosis/diagnosis-statement.md for full evidence and analysis."
+}

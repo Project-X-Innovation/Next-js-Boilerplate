@@ -1,0 +1,65 @@
+{
+  "questions": [
+    "Does the 'tier 4 org endpoint fallback' feature currently exist in the codebase?",
+    "Which repositories need the feature implementation?",
+    "What is the expected fallback behavior (client-side, server-side, or both)?",
+    "Is this a test-first situation or a verification-of-existing-feature situation?",
+    "What test infrastructure is available for verification?"
+  ],
+  "answers": [
+    {
+      "question": "Does the 'tier 4 org endpoint fallback' feature currently exist in the codebase?",
+      "answer": "NO. The feature does not exist. Comprehensive search found: (1) No Organization or Tier models in the Prisma schema (schema.prisma contains User, Project, Permission, Notification, Contact, Group, Message, CallSession models only); (2) No tier-based routing logic in example-server/src/ (grepped 'organization', 'tier', 'fallback' - found only unrelated fallback comments in callService.ts and AddressInput.tsx); (3) No tier detection or validation in authorize.ts middleware; (4) No fallback or retry logic in example-client/src/api/client.ts; (5) No test infrastructure for this feature in either example-client or example-server.",
+      "evidence": [
+        "example-server/prisma/schema.prisma: 168 lines, no Organization or Tier models",
+        "Grep result: (?i)(organization|tier|fallback) in example-server/src/ = only callService.ts comment about fallback in unrelated IVR logic",
+        "example-server/src/middleware/authorize.ts: Authorization logic exists but only for project-level permissions (READ/EDIT/OWNER), no org tier logic",
+        "example-client/src/api/client.ts: Single fetch-based wrapper with no fallback endpoints or tier awareness",
+        "Scout reference-map.json fact: 'No explicit tier 4 org endpoint fallback implementation found in source code'"
+      ]
+    },
+    {
+      "question": "Which repositories need the feature implementation?",
+      "answer": "All three repositories. (1) example-server/src/: Needs Organization/Tier data model (Prisma), tier detection middleware, and tier-aware routing logic; (2) example-client/src/: If fallback is client-side, needs tier-aware endpoint selection and fallback logic in api/client.ts; (3) next-js-boilerplate: Owns test infrastructure (Playwright E2E tests in tests/e2e/, integration tests in tests/integration/).",
+      "evidence": [
+        "Scout summary: 'scope spans three repositories: next-js-boilerplate (test infrastructure), example-server (API backend), example-client (API client)'",
+        "Reference-map.json entryPoints: Identifies API Server (example-server/src/index.ts), API Routes (example-server/src/routes-api.ts), API Client (example-client/src/api/client.ts), E2E Tests (next-js-boilerplate/tests/e2e/)"
+      ]
+    },
+    {
+      "question": "What is the expected fallback behavior (client-side, server-side, or both)?",
+      "answer": "UNKNOWN. Scout identified four possible interpretations: (a) endpoint selection based on organization tier level (server-side), (b) fallback to alternate API endpoint when primary fails (client-side), (c) tiered API access/rate limiting (server-side authorization), (d) feature not yet implemented (state unknown). No requirements documentation found in ticket.md or elsewhere.",
+      "evidence": [
+        "ticket.md: Contains only 'Test that tier 4 org endpoint fallback resolves correctly' - no detailed specification",
+        "Scout unknowns section: Lists four possible interpretations with no resolution path",
+        "No Research Report section in ticket.md"
+      ]
+    },
+    {
+      "question": "Is this a test-first situation or a verification-of-existing-feature situation?",
+      "answer": "AMBIGUOUS. Ticket title says 'Verification: Tier 4 Fallback Test', suggesting verification of existing feature. However, the feature does not exist. Two possibilities: (1) Ticket ordering issue - implementation should precede this verification ticket, or (2) Test-first approach - write test for feature that will be implemented elsewhere.",
+      "evidence": [
+        "Ticket classification: 'Verification' step (implies post-implementation testing)",
+        "Scout finding: Feature does not exist in code",
+        "No prior implementation or research ticket referenced in ticket.md"
+      ]
+    },
+    {
+      "question": "What test infrastructure is available for verification?",
+      "answer": "Comprehensive test infrastructure exists in next-js-boilerplate: (1) Playwright E2E tests (tests/e2e/Counter.e2e.ts shows pattern with page.goto and UI interaction); (2) Integration/API tests (tests/integration/Counter.spec.ts shows page.request API for direct endpoint testing); (3) Vitest unit tests (test script in package.json); (4) playwright.config.ts with webServer integration. No test infrastructure in example-client or example-server.",
+      "evidence": [
+        "tests/e2e/Counter.e2e.ts: Example E2E test using Playwright with page.goto() and page.request",
+        "tests/integration/Counter.spec.ts: Example API integration test using page.request.put() with headers and status validation",
+        "package.json: test:e2e script runs 'playwright test'; test script runs 'vitest run'",
+        "Scout reference-map.json qualityGates: Lists E2E (Playwright) and Unit (Vitest) test gates"
+      ]
+    }
+  ],
+  "statement": "The 'tier 4 org endpoint fallback' feature is not implemented in the codebase. The Prisma schema lacks Organization/Tier models, the Express server has no tier-based routing logic, and the API client has no fallback mechanism. The ticket description lacks functional specification - the exact behavior (client-side fallback, server-side tier selection, or both) is undefined. This appears to be a verification ticket for a feature that either hasn't been implemented yet or is misordered in the workflow. Before a test can be written and verified, the feature must be implemented and its behavior clearly defined. Test infrastructure (Playwright E2E and integration tests) is available in next-js-boilerplate but cannot be applied to non-existent functionality.",
+  "followups": [
+    "Clarify the functional specification: What should 'tier 4 org endpoint fallback' do? How should the client/server handle tier-based API access or fallback behavior?",
+    "Determine implementation scope: Which ticket(s) implement the feature? Is this verification ticket dependent on unfinished work?",
+    "Define the data model: Should Organization and Tier be Prisma models in the database schema? What is the relationship between users and organization tiers?",
+    "Specify fallback semantics: Is fallback client-side (retry a different endpoint) or server-side (tier-aware routing)? Should it affect response formats, rate limits, or feature availability?"
+  ]
+}
