@@ -1,0 +1,61 @@
+{
+  "questions": [
+    "Where should tier 4 inference endpoint fallback logic be implemented (next-js-boilerplate vs example-server vs both)?",
+    "What does 'tier 4' mean in this project's architecture and how should it be defined?",
+    "What is the fallback activation condition and what endpoint should tier 4 select?",
+    "How should tier 4 endpoint configuration be stored and accessed (environment variables, config file, hardcoded)?",
+    "Should tests be implemented in example-server (unit tests on selection logic) or next-js-boilerplate (integration tests via API)?"
+  ],
+  "answers": [
+    {
+      "answer": "Tier 4 fallback logic should be implemented in example-server (backend) as an InferenceEndpointResolver module, following the principle that endpoint/API key management is a backend responsibility.",
+      "evidence": [
+        "example-server is Express.js backend handling routes, authentication, API key management",
+        "API key and endpoint selection are typically backend concerns in SaaS architectures",
+        "example-server already has .env support and credential/config management via environment variables",
+        "next-js-boilerplate is frontend (Next.js) - would mix concerns if tier logic lived there",
+        "Product statement requires 'system' fallback (implies cross-module feature, backend responsibility)"
+      ]
+    },
+    {
+      "answer": "Tier 4 is defined as a custom fallback tier in this project's tier-based endpoint selection hierarchy. It is not based on Anthropic's official API (which uses 'Priority Tier' or service_tier). Tier 4 is selected when higher-priority endpoint sources are unavailable.",
+      "evidence": [
+        "Grep search found no 'tier' references in codebase - this is a new custom system for this project",
+        "Anthropic SDK docs show service_tier values ('auto' or 'standard_only'), not 'tier 4'",
+        "Product.md frames this as 'graceful degradation' and 'custom to this project'",
+        "Ticket references 'per-ticket endpoint' (custom concept) and ANTHROPIC_API_KEY (standard env var)",
+        "Scout confirmed no existing tier hierarchy system in codebase"
+      ]
+    },
+    {
+      "answer": "Fallback activation: Tier 4 endpoint is selected when BOTH conditions are true: (1) no per-ticket endpoint override is provided, AND (2) ANTHROPIC_API_KEY environment variable is absent or empty. Tier 4 should use a configured fallback endpoint URL.",
+      "evidence": [
+        "Ticket explicitly states: 'when no per-ticket endpoint is set and no ANTHROPIC_API_KEY exists'",
+        "Product.md describes use case: 'Per-ticket endpoint overrides are not provided' AND 'primary authentication method (ANTHROPIC_API_KEY) is missing'",
+        "This forms a clear two-condition fallback criteria matching the ticket requirement"
+      ]
+    },
+    {
+      "answer": "Tier 4 endpoint configuration should be stored in environment variables (TIER_4_ENDPOINT, TIER_4_API_KEY) following the existing pattern in example-server where sensitive values use .env files and dotenv loading.",
+      "evidence": [
+        "example-server package.json includes 'dotenv' dependency for env var loading",
+        "ANTHROPIC_API_KEY is a standard Anthropic SDK env var (checked automatically by SDK)",
+        "example-server routes and services already reference environment for configuration",
+        "Project pattern: .env.example exists showing expected env var structure",
+        "Allows flexibility: can differ per environment (dev/staging/prod)"
+      ]
+    },
+    {
+      "answer": "Implement unit tests in example-server after adding Vitest (to match next-js-boilerplate convention). Test the InferenceEndpointResolver.selectEndpoint() function directly with mocked per-ticket endpoint and API key values. Optionally add integration test in next-js-boilerplate via API endpoint.",
+      "evidence": [
+        "next-js-boilerplate has Vitest configured (npm run test) with *.test.ts unit test pattern",
+        "Using Vitest in both repos ensures consistency with project conventions (per AGENTS.md)",
+        "Unit test can verify tier selection logic without needing full app context",
+        "Integration test in next-js-boilerplate would require example-server to expose API endpoint returning selected endpoint info",
+        "Vitest is lightweight and appropriate for backend testing (can be added to example-server without heavy setup)"
+      ]
+    }
+  ],
+  "statement": "Tier 4 inference endpoint fallback is a custom fallback tier system for this project, implemented in example-server (backend) as an InferenceEndpointResolver module. It selects a configured tier 4 endpoint when no per-ticket endpoint override is provided AND ANTHROPIC_API_KEY environment variable is absent. Endpoint configuration uses environment variables (TIER_4_ENDPOINT, TIER_4_API_KEY) following existing project patterns. Tests are implemented in example-server using Vitest (matching next-js-boilerplate convention) to verify the tier selection logic under specified conditions. The mechanism is framework-agnostic and does not require Anthropic SDK installation (though SDK can be integrated later for actual API calls).",
+  "followups": []
+}
