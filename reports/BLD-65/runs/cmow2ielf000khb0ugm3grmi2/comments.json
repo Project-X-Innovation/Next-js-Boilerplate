@@ -1,6 +1,6 @@
 {
   "libraryItemId": "cmp63ye2f0001p4qfa2x4v5mo",
-  "generatedAt": "2026-05-14T23:27:08.744Z",
+  "generatedAt": "2026-05-14T23:29:26.411Z",
   "sections": [
     {
       "anchor": "key-findings",
@@ -138,6 +138,27 @@
         "THUMBS_UP": 1,
         "LOVE": 1,
         "THUMBS_DOWN": 0
+      }
+    },
+    {
+      "anchor": "demo",
+      "comments": [
+        {
+          "id": "cmp64eimq000jp4d9edq0jvfm",
+          "rating": "THUMBS_DOWN",
+          "content": null,
+          "author": {
+            "name": "Cracked",
+            "email": "support@projectxinnovation.com"
+          },
+          "parentCommentId": null,
+          "createdAt": "2026-05-14T23:29:21.362Z"
+        }
+      ],
+      "summary": {
+        "THUMBS_UP": 0,
+        "LOVE": 0,
+        "THUMBS_DOWN": 1
       }
     }
   ]
