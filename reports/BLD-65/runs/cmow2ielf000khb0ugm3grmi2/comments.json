@@ -1,0 +1,133 @@
+{
+  "libraryItemId": "cmp63ye2f0001p4qfa2x4v5mo",
+  "generatedAt": "2026-05-14T23:24:13.570Z",
+  "sections": [
+    {
+      "anchor": "key-findings",
+      "comments": [
+        {
+          "id": "cmp640z5w0001p4d9f77vngem",
+          "rating": "THUMBS_UP",
+          "content": "Dive deeper into this section",
+          "author": {
+            "name": "Cracked",
+            "email": "support@projectxinnovation.com"
+          },
+          "parentCommentId": null,
+          "createdAt": "2026-05-14T23:18:49.604Z"
+        },
+        {
+          "id": "cmp6415bm0007p4d9sqn50v4h",
+          "rating": "LOVE",
+          "content": null,
+          "author": {
+            "name": "Cracked",
+            "email": "support@projectxinnovation.com"
+          },
+          "parentCommentId": null,
+          "createdAt": "2026-05-14T23:18:57.587Z"
+        },
+        {
+          "id": "cmp641jho0009p4d975aeu8be",
+          "rating": "LOVE",
+          "content": "Updated: I strongly agree, this is a great section!",
+          "author": {
+            "name": "Cracked",
+            "email": "support@projectxinnovation.com"
+          },
+          "parentCommentId": "cmp640z5w0001p4d9f77vngem",
+          "createdAt": "2026-05-14T23:19:15.948Z"
+        }
+      ],
+      "summary": {
+        "THUMBS_UP": 1,
+        "LOVE": 1,
+        "THUMBS_DOWN": 0
+      }
+    },
+    {
+      "anchor": "executive-summary",
+      "comments": [
+        {
+          "id": "cmp64159z0003p4d9a407x418",
+          "rating": "LOVE",
+          "content": "Excellent overview",
+          "author": {
+            "name": "Cracked",
+            "email": "support@projectxinnovation.com"
+          },
+          "parentCommentId": null,
+          "createdAt": "2026-05-14T23:18:57.527Z"
+        }
+      ],
+      "summary": {
+        "THUMBS_UP": 0,
+        "LOVE": 1,
+        "THUMBS_DOWN": 0
+      }
+    },
+    {
+      "anchor": "market-overview",
+      "comments": [
+        {
+          "id": "cmp6415at0005p4d9ogp3sb2q",
+          "rating": "THUMBS_DOWN",
+          "content": "Wrong level of abstraction",
+          "author": {
+            "name": "Cracked",
+            "email": "support@projectxinnovation.com"
+          },
+          "parentCommentId": null,
+          "createdAt": "2026-05-14T23:18:57.557Z"
+        }
+      ],
+      "summary": {
+        "THUMBS_UP": 0,
+        "LOVE": 0,
+        "THUMBS_DOWN": 1
+      }
+    },
+    {
+      "anchor": "conclusion",
+      "comments": [
+        {
+          "id": "cmp642uhs000dp4d9238avr13",
+          "rating": "THUMBS_UP",
+          "content": "cmp63ye2f0001p4qfa2x4v5mo Great conclusion",
+          "author": {
+            "name": "Cracked",
+            "email": "support@projectxinnovation.com"
+          },
+          "parentCommentId": null,
+          "createdAt": "2026-05-14T23:20:16.865Z"
+        }
+      ],
+      "summary": {
+        "THUMBS_UP": 1,
+        "LOVE": 0,
+        "THUMBS_DOWN": 0
+      }
+    },
+    {
+      "anchor": "sponsors",
+      "comments": [
+        {
+          "id": "cmp647t8p000fp4d99vywyma0",
+          "rating": "THUMBS_UP",
+          "content": null,
+          "author": {
+            "name": "Cracked",
+            "email": "support@projectxinnovation.com"
+          },
+          "parentCommentId": null,
+          "createdAt": "2026-05-14T23:24:08.522Z"
+        }
+      ],
+      "summary": {
+        "THUMBS_UP": 1,
+        "LOVE": 0,
+        "THUMBS_DOWN": 0
+      }
+    }
+  ]
+}
