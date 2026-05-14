@@ -1,6 +1,6 @@
 {
   "libraryItemId": "cmp63ye2f0001p4qfa2x4v5mo",
-  "generatedAt": "2026-05-14T23:24:13.570Z",
+  "generatedAt": "2026-05-14T23:27:08.744Z",
   "sections": [
     {
       "anchor": "key-findings",
@@ -121,11 +121,22 @@
           },
           "parentCommentId": null,
           "createdAt": "2026-05-14T23:24:08.522Z"
+        },
+        {
+          "id": "cmp64bke9000hp4d9h57ibacz",
+          "rating": "LOVE",
+          "content": "This section has excellent sponsor integrations!",
+          "author": {
+            "name": "Cracked",
+            "email": "support@projectxinnovation.com"
+          },
+          "parentCommentId": null,
+          "createdAt": "2026-05-14T23:27:03.681Z"
         }
       ],
       "summary": {
         "THUMBS_UP": 1,
-        "LOVE": 0,
+        "LOVE": 1,
         "THUMBS_DOWN": 0
       }
     }
